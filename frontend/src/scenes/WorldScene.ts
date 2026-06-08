@@ -50,10 +50,20 @@ export class WorldScene extends Phaser.Scene {
     super('WorldScene');
   }
 
-  create() {
+  async create() {
     // 1. Establish Physics and Camera Boundaries
     this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
     this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
+
+    // Wait for initial database states to load fully before spawning any interactable entities
+    try {
+      await Promise.all([
+        useInventoryStore.getState().fetchInventory(),
+        useWorldStateStore.getState().fetchStates()
+      ]);
+    } catch (err) {
+      console.error('Failed to fetch initial database states:', err);
+    }
 
     // 2. Render repeated Floor grass tiles (desaturated, low noise)
     this.add.tileSprite(
@@ -199,10 +209,6 @@ export class WorldScene extends Phaser.Scene {
     // Initialize UI and managers
     this.interactionManager = new InteractionManager(this, this.interactionSystem, this.player);
     this.inventoryUI = new InventoryUI(this);
-
-    // Initialize Stores (pull initial state from DB)
-    useInventoryStore.getState().fetchInventory();
-    useWorldStateStore.getState().fetchStates();
 
     // Register Tab key for inventory toggle
     if (this.input.keyboard) {
