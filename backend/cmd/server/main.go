@@ -7,6 +7,7 @@ import (
 
 	"backend/internal/config"
 	"backend/internal/database"
+	"backend/internal/inventory"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -33,6 +34,10 @@ func main() {
 	app := fiber.New(fiber.Config{
 		AppName: "Kingdoms of Ruin API v1.0",
 	})
+
+	// Setup Inventory Core
+	invRepo := inventory.NewRepository(db.Pool)
+	invHandler := inventory.NewHandler(invRepo)
 
 	// 4. Register middlewares
 	app.Use(recover.New())
@@ -65,6 +70,10 @@ func main() {
 			"migration_check": note,
 		})
 	})
+
+	// Register Inventory Endpoints
+	app.Get("/api/inventory", invHandler.GetInventory)
+	app.Post("/api/inventory/add", invHandler.AddOrUpdateItem)
 
 	// 6. Start server listening
 	log.Printf("Server listening on port %s", cfg.ServerPort)

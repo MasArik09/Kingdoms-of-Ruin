@@ -218,15 +218,29 @@ export class BootScene extends Phaser.Scene {
     bushGraphics.fillCircle(36, 22, 6);
     bushGraphics.generateTexture('bush', 64, 64);
 
-    // 7. Translucent Clouds (128x64)
+    // 7. Realistic Volumetric Clouds (256x128 soft organic structure)
     const cloudGraphics = this.make.graphics();
-    cloudGraphics.fillStyle(0xffffff, 1);
-    cloudGraphics.fillCircle(64, 32, 28);
-    cloudGraphics.fillCircle(40, 38, 20);
-    cloudGraphics.fillCircle(88, 38, 20);
-    cloudGraphics.fillCircle(52, 22, 22);
-    cloudGraphics.fillCircle(76, 22, 22);
-    cloudGraphics.generateTexture('cloud', 128, 64);
+    const cloudNodes = [
+      { cx: 128, cy: 70, r: 50, a: 0.05 },
+      { cx: 88, cy: 74, r: 38, a: 0.045 },
+      { cx: 168, cy: 74, r: 38, a: 0.045 },
+      { cx: 128, cy: 48, r: 40, a: 0.05 },
+      { cx: 52, cy: 78, r: 26, a: 0.04 },
+      { cx: 204, cy: 78, r: 26, a: 0.04 },
+      { cx: 104, cy: 52, r: 34, a: 0.045 },
+      { cx: 152, cy: 52, r: 34, a: 0.045 },
+    ];
+
+    cloudNodes.forEach(node => {
+      for (let r = node.r; r > 0; r -= 1.5) {
+        const ratio = r / node.r;
+        const alpha = node.a * Math.pow(1 - ratio, 1.6); // smooth gaussian-like falloff
+        cloudGraphics.fillStyle(0xffffff, alpha);
+        cloudGraphics.fillCircle(node.cx, node.cy, r);
+      }
+    });
+
+    cloudGraphics.generateTexture('cloud', 256, 128);
 
     // 8. Large Ruined Fortress Silhouette - Center (384x256)
     // Connecting crumbled walls, flared base towers, gatehouse archway, tattered banner
@@ -463,9 +477,35 @@ export class BootScene extends Phaser.Scene {
     // Steel Shoulder Plates / Body Armor
     playerGraphics.fillStyle(0x334155, 1);
     playerGraphics.fillCircle(32, 42, 16);
-    playerGraphics.fillStyle(0xb45309, 1); // Gold Chest Emblem
-    playerGraphics.fillRect(29, 32, 6, 16);
-    playerGraphics.fillRect(23, 37, 18, 6);
+
+    // Chestplate details: silver highlights and shiny central ridge
+    playerGraphics.fillStyle(0x475569, 1);
+    playerGraphics.fillCircle(32, 42, 14);
+    playerGraphics.fillStyle(0x64748b, 1);
+    playerGraphics.fillCircle(32, 42, 11);
+    playerGraphics.fillStyle(0x94a3b8, 1);
+    playerGraphics.fillRect(29, 32, 6, 16); // Shiny central ridge
+
+    // Gold Shield/Crest Emblem in center (medieval coat of arms)
+    playerGraphics.fillStyle(0xd97706, 1); // Dark gold border
+    playerGraphics.beginPath();
+    playerGraphics.moveTo(27, 36);
+    playerGraphics.lineTo(37, 36);
+    playerGraphics.lineTo(37, 43);
+    playerGraphics.lineTo(32, 48); // Shield point
+    playerGraphics.lineTo(27, 43);
+    playerGraphics.closePath();
+    playerGraphics.fillPath();
+
+    playerGraphics.fillStyle(0xf59e0b, 1); // Light gold inside
+    playerGraphics.beginPath();
+    playerGraphics.moveTo(29, 38);
+    playerGraphics.lineTo(35, 38);
+    playerGraphics.lineTo(35, 42);
+    playerGraphics.lineTo(32, 45);
+    playerGraphics.lineTo(29, 42);
+    playerGraphics.closePath();
+    playerGraphics.fillPath();
 
     // Helmet & Plume
     playerGraphics.fillStyle(0xb91c1c, 1); // Red knight plume
@@ -476,11 +516,13 @@ export class BootScene extends Phaser.Scene {
     playerGraphics.fillStyle(0x475569, 1); // Steel helmet
     playerGraphics.fillCircle(32, 20, 12);
 
-    // Helmet Visor
-    playerGraphics.fillStyle(0x0f172a, 1);
-    playerGraphics.fillRoundedRect(20, 14, 24, 8, 3);
-    playerGraphics.fillStyle(0x22d3ee, 1);
-    playerGraphics.fillRect(23, 17, 18, 2);
+    // Helmet Visor (glowing blue visor slit)
+    playerGraphics.fillStyle(0x1e293b, 1); // Dark visor plate
+    playerGraphics.fillRoundedRect(20, 14, 24, 10, 4);
+    playerGraphics.fillStyle(0x0f172a, 1); // Dark visor slit
+    playerGraphics.fillRect(22, 17, 20, 4);
+    playerGraphics.fillStyle(0x22d3ee, 1); // Glowing cyan energy eye-slit
+    playerGraphics.fillRect(24, 18, 16, 2);
     playerGraphics.generateTexture('player', 64, 64);
 
     // 14. High-Quality Cratered Moon Texture (128x128)
@@ -568,6 +610,106 @@ export class BootScene extends Phaser.Scene {
     shrineGraphics.strokePath();
 
     shrineGraphics.generateTexture('shrine', 128, 128);
+
+    // 17. Wood Log Item Icon (64x64)
+    const woodIconGraphics = this.make.graphics();
+    woodIconGraphics.fillStyle(0x0f0a05, 1); // Outline
+    woodIconGraphics.fillRect(14, 22, 36, 20);
+    woodIconGraphics.fillEllipse(14, 32, 8, 18);
+    woodIconGraphics.fillEllipse(50, 32, 8, 18);
+    woodIconGraphics.fillStyle(0x78350f, 1); // Bark
+    woodIconGraphics.fillRect(16, 24, 32, 16);
+    woodIconGraphics.fillStyle(0xd97706, 1); // End face right
+    woodIconGraphics.fillEllipse(48, 32, 6, 16);
+    woodIconGraphics.fillStyle(0xfef08a, 1); // End face left
+    woodIconGraphics.fillEllipse(16, 32, 6, 16);
+    woodIconGraphics.generateTexture('item-wood', 64, 64);
+
+    // 18. Closed Chest (64x64)
+    const chestClosed = this.make.graphics();
+    chestClosed.fillStyle(0x0a0705, 1); // Outline
+    chestClosed.fillRect(10, 20, 44, 36);
+    chestClosed.fillStyle(0x78350f, 1); // Base wood
+    chestClosed.fillRect(12, 22, 40, 32);
+    chestClosed.fillStyle(0x475569, 1); // Steel bands
+    chestClosed.fillRect(18, 22, 6, 32);
+    chestClosed.fillRect(40, 22, 6, 32);
+    chestClosed.fillStyle(0xd97706, 1); // Golden lock
+    chestClosed.fillRect(28, 32, 8, 8);
+    chestClosed.fillStyle(0x0f0c1b, 1); // Keyhole
+    chestClosed.fillRect(31, 35, 2, 4);
+    chestClosed.generateTexture('chest-closed', 64, 64);
+
+    // 19. Open Chest (64x64)
+    const chestOpen = this.make.graphics();
+    chestOpen.fillStyle(0x0a0705, 1); // Outline
+    chestOpen.fillRect(10, 10, 44, 46);
+    chestOpen.fillStyle(0x78350f, 1); // Base wood
+    chestOpen.fillRect(12, 34, 40, 20); // Lower body
+    chestOpen.fillRect(12, 12, 40, 16); // Lifted lid
+    chestOpen.fillStyle(0x0f0c1b, 1); // Inside dark slot
+    chestOpen.fillRect(14, 28, 36, 6);
+    chestOpen.fillStyle(0x475569, 1); // Steel bands lower
+    chestOpen.fillRect(18, 34, 6, 20);
+    chestOpen.fillRect(40, 34, 6, 20);
+    chestOpen.fillStyle(0x4b5563, 1); // Steel bands upper lid
+    chestOpen.fillRect(18, 12, 6, 16);
+    chestOpen.fillRect(40, 12, 6, 16);
+    chestOpen.fillStyle(0xd97706, 1); // Golden lock latch hanging down
+    chestOpen.fillRect(28, 26, 8, 6);
+    chestOpen.generateTexture('chest-open', 64, 64);
+
+    // 20. Campfire Base Logs (64x64)
+    const campfireBase = this.make.graphics();
+    campfireBase.fillStyle(0x475569, 0.6); // Ash ring
+    campfireBase.fillCircle(32, 40, 22);
+    campfireBase.fillStyle(0x0a0705, 1); // Outline for logs
+    campfireBase.fillRect(16, 32, 32, 10);
+    campfireBase.fillRect(26, 22, 10, 32);
+    campfireBase.fillStyle(0x78350f, 1); // Cross log 1
+    campfireBase.fillRect(18, 34, 28, 6);
+    campfireBase.fillStyle(0x5c240b, 1); // Cross log 2
+    campfireBase.fillRect(28, 24, 6, 28);
+    campfireBase.generateTexture('campfire-base', 64, 64);
+
+    // 21. Fire Particle (32x32 soft glow)
+    const fireParticle = this.make.graphics();
+    fireParticle.fillStyle(0xffffff, 1.0);
+    fireParticle.fillCircle(16, 16, 4);
+    fireParticle.fillStyle(0xffffff, 0.5);
+    fireParticle.fillCircle(16, 16, 8);
+    fireParticle.fillStyle(0xffffff, 0.2);
+    fireParticle.fillCircle(16, 16, 16);
+    fireParticle.generateTexture('fire-particle', 32, 32);
+
+    // 22. Smoke Particle (32x32 soft cloud puff)
+    const smokeParticle = this.make.graphics();
+    smokeParticle.fillStyle(0xffffff, 0.5);
+    smokeParticle.fillCircle(16, 16, 6);
+    smokeParticle.fillStyle(0xffffff, 0.25);
+    smokeParticle.fillCircle(16, 16, 12);
+    smokeParticle.fillStyle(0xffffff, 0.1);
+    smokeParticle.fillCircle(16, 16, 16);
+    smokeParticle.generateTexture('smoke-particle', 32, 32);
+
+    // 23. Spark Particle (8x8 sharp dot)
+    const sparkParticle = this.make.graphics();
+    sparkParticle.fillStyle(0xffffff, 1.0);
+    sparkParticle.fillCircle(4, 4, 1.5);
+    sparkParticle.fillStyle(0xffffff, 0.4);
+    sparkParticle.fillCircle(4, 4, 3);
+    sparkParticle.generateTexture('spark-particle', 8, 8);
+
+    // 24. Campfire Glow (160x160 soft radial light gradient)
+    const campfireGlow = this.make.graphics();
+    const glowRadius = 80;
+    for (let r = glowRadius; r > 0; r -= 2) {
+      const ratio = r / glowRadius;
+      const alpha = 0.22 * (1 - ratio); // Linear falloff for wider, softer glow
+      campfireGlow.fillStyle(0xd97706, alpha);
+      campfireGlow.fillCircle(80, 80, r);
+    }
+    campfireGlow.generateTexture('campfire-glow', 160, 160);
 
     console.log('BootScene: Textures generated. Launching MainMenuScene...');
     this.scene.start('MainMenuScene');

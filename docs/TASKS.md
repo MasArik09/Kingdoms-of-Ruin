@@ -48,23 +48,53 @@ Status Legend:
 
 ## Player Entity
 
-- [ ] Create Player entity
-- [ ] Create Player component
-- [ ] Create Player sprite
-- [ ] Create Animation controller
+- [x] Create Player entity
+- [x] Create Player component
+- [x] Create Player sprite
+- [x] Create Animation controller
 
 ## Movement
 
-- [ ] WASD movement
-- [ ] Mouse movement
-- [ ] Collision detection
-- [ ] Camera follow
+- [x] WASD movement
+- [-] Mouse movement
+- [x] Collision detection
+- [x] Camera follow
 
 ## Input
 
-- [ ] Keyboard handler
-- [ ] Mouse handler
-- [ ] Input abstraction layer
+- [x] Keyboard handler
+- [-] Mouse handler
+- [x] Input abstraction layer
+
+---
+
+# Phase 1B — Core Interaction Loop
+
+## Proximity Interaction
+
+- [x] Generic InteractionComponent
+- [x] InteractionSystem registry
+- [x] InteractionManager update loops & key listener
+- [x] Proximity visual prompt UI
+
+## Landmarks & Loot
+
+- [x] Campfire class, light glow, flame tweens, rest callback
+- [x] AncientShrine class, static collider, examine callback
+- [x] TreasureChest class, open/closed state, loot event
+- [x] Stacking UI toasts for feedback
+
+## Item & Inventory System
+
+- [x] Data-driven ItemRegistry and ItemDefinition
+- [x] Zustand InventoryStore
+- [x] Grid inventory UI panel toggled on TAB
+- [x] Inventory filter tabs and item descriptions
+
+## Backend Integration
+
+- [x] PostgreSQL owner-based inventory_items schema
+- [x] Fiber GET/POST endpoints & upsert SQL logic
 
 ---
 

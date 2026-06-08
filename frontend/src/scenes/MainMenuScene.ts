@@ -46,7 +46,7 @@ export class MainMenuScene extends Phaser.Scene {
         Phaser.Math.Between(-100, width),
         Phaser.Math.Between(30, 150),
         'cloud'
-      ).setOrigin(0.5).setAlpha(Phaser.Math.FloatBetween(0.08, 0.15)).setScale(Phaser.Math.FloatBetween(1.2, 2.0));
+      ).setOrigin(0.5).setAlpha(Phaser.Math.FloatBetween(0.08, 0.15)).setScale(Phaser.Math.FloatBetween(0.6, 1.0));
       
       c.setTint(0x7c3aed);
       this.bgClouds.push(c);
@@ -69,7 +69,7 @@ export class MainMenuScene extends Phaser.Scene {
         Phaser.Math.Between(-150, width),
         Phaser.Math.Between(100, 240),
         'cloud'
-      ).setOrigin(0.5).setAlpha(Phaser.Math.FloatBetween(0.25, 0.45)).setScale(Phaser.Math.FloatBetween(1.0, 1.8));
+      ).setOrigin(0.5).setAlpha(Phaser.Math.FloatBetween(0.25, 0.45)).setScale(Phaser.Math.FloatBetween(0.5, 0.9));
       
       c.setTint(0x93c5fd);
       this.fgClouds.push(c);
@@ -90,7 +90,7 @@ export class MainMenuScene extends Phaser.Scene {
         Phaser.Math.Between(-200, width),
         height - Phaser.Math.Between(10, 60),
         'cloud'
-      ).setOrigin(0.5, 1).setAlpha(Phaser.Math.FloatBetween(0.08, 0.16)).setScale(Phaser.Math.FloatBetween(4.0, 6.0), Phaser.Math.FloatBetween(1.2, 2.0));
+      ).setOrigin(0.5, 1).setAlpha(Phaser.Math.FloatBetween(0.08, 0.16)).setScale(Phaser.Math.FloatBetween(2.0, 3.0), Phaser.Math.FloatBetween(0.6, 1.0));
       
       f.setTint(0xa78bfa);
       this.fogs.push(f);

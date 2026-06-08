@@ -1,9 +1,22 @@
 import Phaser from 'phaser';
 import { usePlayerStore } from '../stores/playerStore';
+import { useInventoryStore } from '../stores/inventoryStore';
+import { InteractionSystem } from '../systems/InteractionSystem';
+import { InteractionManager } from '../systems/InteractionManager';
+import { Campfire } from '../entities/Campfire';
+import { AncientShrine } from '../entities/AncientShrine';
+import { TreasureChest } from '../entities/TreasureChest';
+import { ToastManager } from '../ui/ToastManager';
+import { InventoryUI } from '../ui/InventoryUI';
 
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private playerShadow!: Phaser.GameObjects.Image;
+  private interactionSystem!: InteractionSystem;
+  private interactionManager!: InteractionManager;
+  private toastManager!: ToastManager;
+  private inventoryUI!: InventoryUI;
+  private tabKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
     up: Phaser.Input.Keyboard.Key;
@@ -67,6 +80,10 @@ export class WorldScene extends Phaser.Scene {
       moss.setAlpha(Phaser.Math.FloatBetween(0.4, 0.8));
     }
 
+    // Initialize Systems
+    this.interactionSystem = new InteractionSystem();
+    this.toastManager = new ToastManager(this);
+
     // 3. Static Groups for Obstacles
     const obstacles = this.physics.add.staticGroup();
 
@@ -88,12 +105,7 @@ export class WorldScene extends Phaser.Scene {
     // 5. Spawn World Landmark: Ruined Shrine (Just north of spawning center at x=1000, y=840)
     const shrineX = 1000;
     const shrineY = 840;
-    // Platform drop shadow
-    this.add.image(shrineX, shrineY + 44, 'shadow').setScale(2.2, 0.7).setAlpha(0.85);
-    // Shrine static body
-    const shrine = obstacles.create(shrineX, shrineY, 'shrine');
-    shrine.body.setSize(96, 44);
-    shrine.body.setOffset(16, 76);
+    const shrine = new AncientShrine(this, shrineX, shrineY, this.interactionSystem);
 
     // 6. Populate World with Scattered Environment Assets
     const gridSize = 120;
@@ -120,20 +132,26 @@ export class WorldScene extends Phaser.Scene {
 
         if (rand < 0.15) {
           // Tree + Shadow
-          this.add.image(posX, posY + 22, 'shadow').setScale(1.0, 0.45).setAlpha(0.75);
+          const shadow = this.add.image(posX, posY + 22, 'shadow').setScale(1.0, 0.45).setAlpha(0.75);
+          shadow.setDepth(posY + 22 - 1);
           const tree = obstacles.create(posX, posY, 'tree');
+          tree.setDepth(posY);
           tree.body.setSize(20, 24);
           tree.body.setOffset(22, 36);
         } else if (rand < 0.25) {
           // Rock + Shadow
-          this.add.image(posX, posY + 16, 'shadow').setScale(1.2, 0.45).setAlpha(0.8);
+          const shadow = this.add.image(posX, posY + 16, 'shadow').setScale(1.2, 0.45).setAlpha(0.8);
+          shadow.setDepth(posY + 16 - 1);
           const rock = obstacles.create(posX, posY, 'rock');
+          rock.setDepth(posY);
           rock.body.setSize(40, 36);
           rock.body.setOffset(12, 18);
         } else if (rand < 0.38) {
           // Bush + Shadow
-          this.add.image(posX, posY + 14, 'shadow').setScale(0.9, 0.42).setAlpha(0.6);
-          this.add.image(posX, posY, 'bush');
+          const shadow = this.add.image(posX, posY + 14, 'shadow').setScale(0.9, 0.42).setAlpha(0.6);
+          shadow.setDepth(posY + 14 - 1);
+          const bush = this.add.image(posX, posY, 'bush');
+          bush.setDepth(posY);
         }
       }
     }
@@ -159,8 +177,16 @@ export class WorldScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(storePos.x, storePos.y, 'player');
     this.player.setCollideWorldBounds(true);
     
+    // Spawn Campfire Landmark
+    new Campfire(this, 920, 980, this.interactionSystem);
+
+    // Spawn Treasure Chest Landmark
+    const chest = new TreasureChest(this, 1080, 980, this.interactionSystem);
+
     // Physical colliders
     this.physics.add.collider(this.player, obstacles);
+    this.physics.add.collider(this.player, shrine);
+    this.physics.add.collider(this.player, chest);
 
     // Adjust collision body limits to match feet/shoulders on 64x64 frame
     if (this.player.body) {
@@ -168,6 +194,40 @@ export class WorldScene extends Phaser.Scene {
       body.setSize(32, 28);
       body.setOffset(16, 34);
     }
+
+    // Initialize UI and managers
+    this.interactionManager = new InteractionManager(this, this.interactionSystem, this.player);
+    this.inventoryUI = new InventoryUI(this);
+
+    // Initialize Inventory Store (pull initial state from DB)
+    useInventoryStore.getState().fetchInventory();
+
+    // Register Tab key for inventory toggle
+    if (this.input.keyboard) {
+      this.tabKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+      this.tabKey.on('down', () => {
+        this.inventoryUI.toggle();
+      });
+    }
+
+    // Hook up Landmark Events
+    this.events.on('landmark:campfire-rest', () => {
+      this.toastManager.showToast('Campfire Rested: You rest beside the fire.');
+    });
+
+    this.events.on('landmark:shrine-examine', () => {
+      this.toastManager.showToast('Shrine Examined: The shrine is ancient and worn.');
+    });
+
+    this.events.on('landmark:chest-loot', (data: { itemId: string; quantity: number }) => {
+      useInventoryStore.getState().addItem(data.itemId, data.quantity).then((res) => {
+        if (res) {
+          this.toastManager.showToast(`Obtained: Wood x${data.quantity}`);
+        } else {
+          this.toastManager.showToast('Failed to save loot to server', false);
+        }
+      });
+    });
 
     // 9. Idle breathing scale animation
     this.idleTween = this.tweens.add({
@@ -207,6 +267,9 @@ export class WorldScene extends Phaser.Scene {
 
     this.events.once('shutdown', () => {
       this.scale.off('resize', this.resize, this);
+      if (this.interactionManager) this.interactionManager.destroy();
+      if (this.toastManager) this.toastManager.destroy();
+      if (this.inventoryUI) this.inventoryUI.destroy();
     });
 
     // Camera fade-in
@@ -218,6 +281,11 @@ export class WorldScene extends Phaser.Scene {
 
   update() {
     if (!this.player) return;
+
+    // Update interactions
+    if (this.interactionManager) {
+      this.interactionManager.update();
+    }
 
     // Movement speeds
     const speed = 250;
@@ -247,6 +315,10 @@ export class WorldScene extends Phaser.Scene {
 
     // Sync player shadow position
     this.playerShadow.setPosition(this.player.x, this.player.y + 24);
+
+    // Sync depth sorting
+    this.player.setDepth(this.player.y);
+    this.playerShadow.setDepth(this.player.y - 1);
 
     // Flip horizontal scale based on motion direction
     if (vx < 0) {
@@ -311,7 +383,7 @@ export class WorldScene extends Phaser.Scene {
 
   private createHUD() {
     // Top-left stats container
-    this.topLeftContainer = this.add.container(0, 0).setScrollFactor(0);
+    this.topLeftContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
 
     const headerBg = this.add.graphics();
     headerBg.fillStyle(0x0f0c1b, 0.85);
@@ -344,7 +416,7 @@ export class WorldScene extends Phaser.Scene {
     this.topLeftContainer.add(this.hudBackendStatusText);
 
     // Bottom-right instructions container
-    this.instructionsContainer = this.add.container(0, 0).setScrollFactor(0);
+    this.instructionsContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
 
     const instructionsBg = this.add.graphics();
     instructionsBg.fillStyle(0x0f0c1b, 0.85);
@@ -363,7 +435,7 @@ export class WorldScene extends Phaser.Scene {
     this.instructionsContainer.add(instructionsText);
 
     // Bottom-left Back Button container
-    this.backBtnContainer = this.add.container(0, 0).setScrollFactor(0);
+    this.backBtnContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
 
     const backBtnBg = this.add.graphics();
     backBtnBg.fillStyle(0x1e1b4b, 0.85);
@@ -400,7 +472,7 @@ export class WorldScene extends Phaser.Scene {
 
   private createDebugOverlay() {
     // Top-right debug container
-    this.debugContainer = this.add.container(0, 0).setScrollFactor(0);
+    this.debugContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
 
     const debugBg = this.add.graphics();
     debugBg.fillStyle(0x090514, 0.9);
