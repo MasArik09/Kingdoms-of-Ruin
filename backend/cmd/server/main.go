@@ -8,6 +8,7 @@ import (
 	"backend/internal/config"
 	"backend/internal/database"
 	"backend/internal/inventory"
+	"backend/internal/worldstate"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -38,6 +39,10 @@ func main() {
 	// Setup Inventory Core
 	invRepo := inventory.NewRepository(db.Pool)
 	invHandler := inventory.NewHandler(invRepo)
+
+	// Setup World State Core
+	wsRepo := worldstate.NewRepository(db.Pool)
+	wsHandler := worldstate.NewHandler(wsRepo)
 
 	// 4. Register middlewares
 	app.Use(recover.New())
@@ -74,6 +79,10 @@ func main() {
 	// Register Inventory Endpoints
 	app.Get("/api/inventory", invHandler.GetInventory)
 	app.Post("/api/inventory/add", invHandler.AddOrUpdateItem)
+
+	// Register World State Endpoints
+	app.Get("/api/worldstate", wsHandler.GetState)
+	app.Post("/api/worldstate/set", wsHandler.SetState)
 
 	// 6. Start server listening
 	log.Printf("Server listening on port %s", cfg.ServerPort)

@@ -1,14 +1,25 @@
 import Phaser from 'phaser';
 import { InteractionComponent } from './InteractionComponent';
 import { InteractionSystem } from '../systems/InteractionSystem';
+import { useWorldStateStore } from '../stores/worldStateStore';
 
 export class TreasureChest extends Phaser.Physics.Arcade.Sprite {
+  public id: string;
   public interaction: InteractionComponent;
   private shadow: Phaser.GameObjects.Image;
   private isOpened = false;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, system: InteractionSystem) {
-    super(scene, x, y, 'chest-closed');
+  constructor(scene: Phaser.Scene, x: number, y: number, system: InteractionSystem, id?: string) {
+    const chestId = id || `chest_${x}_${y}`;
+    
+    // Check persisted world state
+    const { getWorldState } = useWorldStateStore.getState();
+    const isOpened = getWorldState(chestId) === 'true';
+    const startTexture = isOpened ? 'chest-open' : 'chest-closed';
+
+    super(scene, x, y, startTexture);
+    this.id = chestId;
+    this.isOpened = isOpened;
 
     // Add to scene and physics
     scene.add.existing(this);
@@ -41,7 +52,11 @@ export class TreasureChest extends Phaser.Physics.Arcade.Sprite {
       },
     });
 
-    system.register(this.interaction);
+    if (this.isOpened) {
+      this.interaction.enabled = false;
+    } else {
+      system.register(this.interaction);
+    }
   }
 
   public open(system: InteractionSystem): void {
@@ -64,6 +79,9 @@ export class TreasureChest extends Phaser.Physics.Arcade.Sprite {
     // Disable and unregister interaction
     this.interaction.enabled = false;
     system.unregister(this.interaction);
+
+    // Persist open state in database
+    useWorldStateStore.getState().setWorldState(this.id, 'true');
 
     // Emit event for looting
     this.scene.events.emit('landmark:chest-loot', {

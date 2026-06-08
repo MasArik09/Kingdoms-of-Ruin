@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { useInventoryStore } from '../stores/inventoryStore';
+import { useWorldStateStore } from '../stores/worldStateStore';
 
 export class MainMenuScene extends Phaser.Scene {
   private bgGraphics!: Phaser.GameObjects.Graphics;
@@ -164,6 +166,10 @@ export class MainMenuScene extends Phaser.Scene {
     // 14. Centered Action Buttons
     this.buttonsContainerArray.push(
       this.createFantasyButton('NEW GAME', () => {
+        // Pre-fetch state from database in parallel during the 800ms camera fade
+        useInventoryStore.getState().fetchInventory();
+        useWorldStateStore.getState().fetchStates();
+
         this.cameras.main.fade(800, 10, 6, 20);
         this.cameras.main.once('camerafadeoutcomplete', () => {
           this.scene.start('WorldScene');

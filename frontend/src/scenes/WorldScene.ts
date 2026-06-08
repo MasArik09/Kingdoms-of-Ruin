@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { usePlayerStore } from '../stores/playerStore';
 import { useInventoryStore } from '../stores/inventoryStore';
+import { useWorldStateStore } from '../stores/worldStateStore';
 import { InteractionSystem } from '../systems/InteractionSystem';
 import { InteractionManager } from '../systems/InteractionManager';
 import { Campfire } from '../entities/Campfire';
@@ -199,8 +200,9 @@ export class WorldScene extends Phaser.Scene {
     this.interactionManager = new InteractionManager(this, this.interactionSystem, this.player);
     this.inventoryUI = new InventoryUI(this);
 
-    // Initialize Inventory Store (pull initial state from DB)
+    // Initialize Stores (pull initial state from DB)
     useInventoryStore.getState().fetchInventory();
+    useWorldStateStore.getState().fetchStates();
 
     // Register Tab key for inventory toggle
     if (this.input.keyboard) {
