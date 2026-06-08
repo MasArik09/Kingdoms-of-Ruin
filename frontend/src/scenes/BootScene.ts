@@ -8,20 +8,66 @@ export class BootScene extends Phaser.Scene {
   create() {
     console.log('BootScene: Creating high-quality polished textures...');
 
-    // 1. CALM Grass Floor Tile (64x64) - Reduced density, desaturated, soft color variations, no grid lines, no wildflower dots
+    // 1. Earthy Soil Floor Tile (64x64) - Seamless, subtle color variations, no grid lines
     const grassGraphics = this.make.graphics();
-    grassGraphics.fillStyle(0x121813, 1);
+    // Base Soil Color: Rich dark earthy brown
+    grassGraphics.fillStyle(0x3a291e, 1);
     grassGraphics.fillRect(0, 0, 64, 64);
-    // Soft subtle color variations
-    grassGraphics.fillStyle(0x0e140f, 0.4);
-    grassGraphics.fillCircle(18, 18, 16);
-    grassGraphics.fillStyle(0x151c16, 0.4);
-    grassGraphics.fillCircle(46, 46, 20);
-    // Extremely subtle grass blades (low contrast)
-    grassGraphics.fillStyle(0x19221a, 0.6);
-    grassGraphics.fillRect(12, 14, 2, 4);
-    grassGraphics.fillRect(40, 42, 2, 4);
+    
+    // Soft subtle brown color variations for soil texture (low contrast so it repeats seamlessly)
+    grassGraphics.fillStyle(0x2f2118, 0.35); // Darker soil patch
+    grassGraphics.fillCircle(18, 18, 14);
+    grassGraphics.fillStyle(0x443023, 0.25); // Lighter soil patch
+    grassGraphics.fillCircle(46, 46, 16);
+    
+    // Very subtle soil specks (low contrast)
+    grassGraphics.fillStyle(0x2f2118, 0.4);
+    grassGraphics.fillRect(12, 14, 2, 2);
+    grassGraphics.fillRect(40, 42, 2, 2);
+    grassGraphics.fillRect(24, 30, 2, 2);
     grassGraphics.generateTexture('grass', 64, 64);
+
+    // 1b. Moss Clump Texture (64x64) - Drawn as a separate transparent sprite to overlay randomly
+    const mossGraphics = this.make.graphics();
+    mossGraphics.fillStyle(0x2d3a22, 0.8); // Deep mossy green base
+    mossGraphics.fillCircle(32, 32, 16);
+    mossGraphics.fillCircle(24, 28, 11);
+    mossGraphics.fillCircle(40, 36, 13);
+    mossGraphics.fillCircle(30, 42, 9);
+    
+    mossGraphics.fillStyle(0x3e512f, 0.85); // Mid mossy green
+    mossGraphics.fillCircle(32, 32, 11);
+    mossGraphics.fillCircle(25, 29, 7);
+    mossGraphics.fillCircle(38, 35, 8);
+    
+    mossGraphics.fillStyle(0x526b3e, 0.9); // Lighter moss highlight
+    mossGraphics.fillCircle(32, 32, 5);
+    mossGraphics.fillCircle(26, 29, 3);
+    mossGraphics.fillCircle(37, 34, 4);
+    
+    // Add small specks of moss around the main clump
+    mossGraphics.fillStyle(0x2d3a22, 0.6);
+    mossGraphics.fillCircle(14, 22, 3);
+    mossGraphics.fillCircle(46, 46, 3);
+    mossGraphics.fillStyle(0x3e512f, 0.7);
+    mossGraphics.fillCircle(15, 21, 1.5);
+    mossGraphics.fillCircle(47, 45, 1.5);
+    mossGraphics.generateTexture('moss', 64, 64);
+
+    // 1c. Small Moss Clump Texture (32x32)
+    const mossSmallGraphics = this.make.graphics();
+    mossSmallGraphics.fillStyle(0x2d3a22, 0.8);
+    mossSmallGraphics.fillCircle(16, 16, 8);
+    mossSmallGraphics.fillCircle(12, 12, 6);
+    mossSmallGraphics.fillCircle(20, 18, 5);
+    
+    mossSmallGraphics.fillStyle(0x3e512f, 0.85);
+    mossSmallGraphics.fillCircle(16, 16, 5);
+    mossSmallGraphics.fillCircle(13, 13, 3);
+    
+    mossSmallGraphics.fillStyle(0x526b3e, 0.9);
+    mossSmallGraphics.fillCircle(16, 16, 2);
+    mossSmallGraphics.generateTexture('moss-small', 32, 32);
 
     // 2. Bounded Stone border blocks (64x64)
     const stoneGraphics = this.make.graphics();
@@ -78,19 +124,81 @@ export class BootScene extends Phaser.Scene {
     treeGraphics.fillCircle(32, 10, 5);
     treeGraphics.generateTexture('tree', 64, 64);
 
-    // 5. Polished Rock with Chiseled Facets (64x64)
+    // 5. Polished Rock with Chiseled Facets (64x64) - CoC-style faceted boulder
     const rockGraphics = this.make.graphics();
-    rockGraphics.fillStyle(0x1a2230, 1);
-    rockGraphics.fillCircle(32, 36, 21);
-    rockGraphics.fillStyle(0x475569, 1);
-    rockGraphics.fillCircle(32, 34, 19);
-    rockGraphics.fillStyle(0x64748b, 1);
-    rockGraphics.fillCircle(30, 32, 15);
-    rockGraphics.fillStyle(0x94a3b8, 1);
-    rockGraphics.fillCircle(25, 27, 10);
-    rockGraphics.fillCircle(35, 29, 8);
-    rockGraphics.lineStyle(1.5, 0xcbd5e1, 0.4);
-    rockGraphics.strokeCircle(25, 27, 10);
+
+    // Helper function to draw a polygon
+    const drawPoly = (points: number[], color: number) => {
+      rockGraphics.fillStyle(color, 1);
+      rockGraphics.beginPath();
+      rockGraphics.moveTo(points[0], points[1]);
+      for (let i = 2; i < points.length; i += 2) {
+        rockGraphics.lineTo(points[i], points[i+1]);
+      }
+      rockGraphics.closePath();
+      rockGraphics.fillPath();
+    };
+
+    // 5.1 Bold dark backing (gives a crisp outline like Clash of Clans)
+    rockGraphics.fillStyle(0x0a0f18, 1);
+    rockGraphics.beginPath();
+    rockGraphics.moveTo(10, 48);
+    rockGraphics.lineTo(8, 30);
+    rockGraphics.lineTo(20, 14);
+    rockGraphics.lineTo(44, 12);
+    rockGraphics.lineTo(56, 24);
+    rockGraphics.lineTo(56, 46);
+    rockGraphics.lineTo(38, 54);
+    rockGraphics.lineTo(20, 54);
+    rockGraphics.closePath();
+    rockGraphics.fillPath();
+
+    // 5.2 Draw the facets (shards of the chiseled stone)
+    // Facet 1: Top highlight face
+    drawPoly([21, 16, 34, 15, 28, 26, 18, 24], 0x94a3b8);
+    
+    // Facet 2: Top-Right highlight/midtone
+    drawPoly([34, 15, 43, 14, 48, 24, 28, 26], 0x64748b);
+    
+    // Facet 3: Far-Right shadow
+    drawPoly([43, 14, 54, 25, 44, 38, 48, 24], 0x334155);
+    
+    // Facet 4: Left highlight/midtone
+    drawPoly([10, 31, 18, 24, 28, 26, 22, 38, 12, 44], 0x475569);
+    
+    // Facet 5: Center face/ledge
+    drawPoly([28, 26, 48, 24, 44, 38, 22, 38], 0x64748b);
+    
+    // Facet 6: Bottom-Left shadow
+    drawPoly([12, 44, 22, 38, 30, 48, 21, 52], 0x1e293b);
+    
+    // Facet 7: Bottom-Right deep shadow
+    drawPoly([22, 38, 44, 38, 54, 45, 37, 52, 30, 48], 0x0f172a);
+
+    // 5.3 Edge Highlights (adds crisp 3D depth to the ridges)
+    rockGraphics.lineStyle(1.5, 0xe2e8f0, 0.7);
+    rockGraphics.beginPath();
+    rockGraphics.moveTo(21, 16);
+    rockGraphics.lineTo(34, 15);
+    rockGraphics.lineTo(43, 14);
+    rockGraphics.strokePath();
+
+    rockGraphics.beginPath();
+    rockGraphics.moveTo(18, 24);
+    rockGraphics.lineTo(28, 26);
+    rockGraphics.lineTo(48, 24);
+    rockGraphics.strokePath();
+
+    rockGraphics.beginPath();
+    rockGraphics.moveTo(10, 31);
+    rockGraphics.lineTo(18, 24);
+    rockGraphics.strokePath();
+
+    rockGraphics.beginPath();
+    rockGraphics.moveTo(28, 26);
+    rockGraphics.lineTo(22, 38);
+    rockGraphics.strokePath();
+
     rockGraphics.generateTexture('rock', 64, 64);
 
     // 6. Polished Bush (64x64)
@@ -429,14 +537,14 @@ export class BootScene extends Phaser.Scene {
     shrineGraphics.fillRect(18, 24, 16, 56);
     shrineGraphics.fillStyle(0x475569, 1);
     shrineGraphics.fillRect(18, 24, 16, 56);
-    shrineGraphics.fillStyle(0x121813, 1); // Grass color
+    shrineGraphics.fillStyle(0x3a291e, 1); // Grass/Soil color
     shrineGraphics.fillTriangle(18, 24, 18, 36, 26, 24);
     shrineGraphics.fillTriangle(34, 24, 34, 32, 28, 24);
 
     // Right column
     shrineGraphics.fillStyle(0x475569, 1);
     shrineGraphics.fillRect(94, 12, 16, 68);
-    shrineGraphics.fillStyle(0x121813, 1);
+    shrineGraphics.fillStyle(0x3a291e, 1);
     shrineGraphics.fillTriangle(94, 12, 94, 20, 102, 12);
 
     // Pedestal

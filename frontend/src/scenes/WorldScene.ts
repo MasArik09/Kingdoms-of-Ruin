@@ -50,6 +50,23 @@ export class WorldScene extends Phaser.Scene {
       'grass'
     );
 
+    // 2.1 Spawn organic Moss Patches randomly across the map (below obstacles and player)
+    const mossCount = 150;
+    for (let i = 0; i < mossCount; i++) {
+      const x = Phaser.Math.Between(64, this.worldWidth - 64);
+      const y = Phaser.Math.Between(64, this.worldHeight - 64);
+      const isLarge = Math.random() < 0.4;
+      const texture = isLarge ? 'moss' : 'moss-small';
+      
+      const moss = this.add.image(x, y, texture);
+      
+      // Randomize scale, rotation, and alpha to look natural
+      const scaleMultiplier = Phaser.Math.FloatBetween(0.8, 1.5);
+      moss.setScale(scaleMultiplier);
+      moss.setAngle(Phaser.Math.Between(0, 360));
+      moss.setAlpha(Phaser.Math.FloatBetween(0.4, 0.8));
+    }
+
     // 3. Static Groups for Obstacles
     const obstacles = this.physics.add.staticGroup();
 
