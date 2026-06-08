@@ -5,8 +5,10 @@ import (
 	"log"
 	"time"
 
+	"backend/internal/character"
 	"backend/internal/config"
 	"backend/internal/database"
+	"backend/internal/equipment"
 	"backend/internal/inventory"
 	"backend/internal/worldstate"
 
@@ -31,6 +33,12 @@ func main() {
 	}
 	defer db.Close()
 
+	// Bootstrap default character and starter items
+	if err := character.BootstrapDefaultCharacter(ctx, db.Pool); err != nil {
+		log.Fatalf("Character bootstrap failed: %v", err)
+	}
+
+
 	// 3. Setup Fiber Application
 	app := fiber.New(fiber.Config{
 		AppName: "Kingdoms of Ruin API v1.0",
@@ -43,6 +51,10 @@ func main() {
 	// Setup World State Core
 	wsRepo := worldstate.NewRepository(db.Pool)
 	wsHandler := worldstate.NewHandler(wsRepo)
+
+	// Setup Equipment Core
+	eqRepo := equipment.NewRepository(db.Pool)
+	eqHandler := equipment.NewHandler(eqRepo)
 
 	// 4. Register middlewares
 	app.Use(recover.New())
@@ -83,6 +95,11 @@ func main() {
 	// Register World State Endpoints
 	app.Get("/api/worldstate", wsHandler.GetState)
 	app.Post("/api/worldstate/set", wsHandler.SetState)
+
+	// Register Equipment Endpoints
+	app.Get("/api/equipment", eqHandler.GetEquipment)
+	app.Post("/api/equipment/equip", eqHandler.EquipItem)
+	app.Post("/api/equipment/unequip", eqHandler.UnequipItem)
 
 	// 6. Start server listening
 	log.Printf("Server listening on port %s", cfg.ServerPort)

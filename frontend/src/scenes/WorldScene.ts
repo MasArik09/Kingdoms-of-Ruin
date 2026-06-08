@@ -9,6 +9,8 @@ import { AncientShrine } from '../entities/AncientShrine';
 import { TreasureChest } from '../entities/TreasureChest';
 import { ToastManager } from '../ui/ToastManager';
 import { InventoryUI } from '../ui/InventoryUI';
+import { CharacterPanelUI } from '../ui/CharacterPanelUI';
+import { useCharacterStore } from '../stores/characterStore';
 
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
@@ -17,6 +19,8 @@ export class WorldScene extends Phaser.Scene {
   private interactionManager!: InteractionManager;
   private toastManager!: ToastManager;
   private inventoryUI!: InventoryUI;
+  private characterPanelUI!: CharacterPanelUI;
+
   private tabKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
@@ -59,6 +63,7 @@ export class WorldScene extends Phaser.Scene {
     try {
       await Promise.all([
         useInventoryStore.getState().fetchInventory(),
+        useCharacterStore.getState().fetchEquipment(),
         useWorldStateStore.getState().fetchStates()
       ]);
     } catch (err) {
@@ -209,12 +214,19 @@ export class WorldScene extends Phaser.Scene {
     // Initialize UI and managers
     this.interactionManager = new InteractionManager(this, this.interactionSystem, this.player);
     this.inventoryUI = new InventoryUI(this);
+    this.characterPanelUI = new CharacterPanelUI(this);
 
     // Register Tab key for inventory toggle
     if (this.input.keyboard) {
       this.tabKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
       this.tabKey.on('down', () => {
-        this.inventoryUI.toggle();
+        this.inventoryUI.toggle(this.characterPanelUI);
+      });
+
+      // Register C key for character sheet toggle
+      const cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+      cKey.on('down', () => {
+        this.characterPanelUI.toggle(this.inventoryUI);
       });
     }
 
@@ -278,6 +290,7 @@ export class WorldScene extends Phaser.Scene {
       if (this.interactionManager) this.interactionManager.destroy();
       if (this.toastManager) this.toastManager.destroy();
       if (this.inventoryUI) this.inventoryUI.destroy();
+      if (this.characterPanelUI) this.characterPanelUI.destroy();
     });
 
     // Camera fade-in
@@ -387,6 +400,15 @@ export class WorldScene extends Phaser.Scene {
     this.backBtnContainer.setPosition(safePadding, height - 40 - safePadding);
     this.instructionsContainer.setPosition(width - 300 - safePadding, height - 60 - safePadding);
     this.debugContainer.setPosition(width - 220 - safePadding, safePadding);
+
+    // Call adjustLayout on characterPanelUI if it exists to maintain side-by-side positioning on resize
+    if (this.characterPanelUI && this.characterPanelUI.getIsOpen()) {
+      this.characterPanelUI.adjustLayout(this.inventoryUI);
+    } else if (this.inventoryUI && this.inventoryUI.getIsOpen()) {
+      this.inventoryUI.setPosition(width / 2, height / 2);
+      this.inventoryUI.renderInventory();
+      this.inventoryUI.createTabZones();
+    }
   }
 
   private createHUD() {

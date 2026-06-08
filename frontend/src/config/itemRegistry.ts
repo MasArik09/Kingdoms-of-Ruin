@@ -33,6 +33,30 @@ export const ItemRegistry: Record<string, ItemDefinition> = {
     icon: 'item-leather-armor',
     maxStack: 1
   },
+  traveler_hood: {
+    id: 'traveler_hood',
+    name: 'Traveler Hood',
+    description: 'A simple hood offering minor defense and improved agility.',
+    category: 'armor',
+    icon: 'item-traveler-hood',
+    maxStack: 1
+  },
+  worn_leather_armor: {
+    id: 'worn_leather_armor',
+    name: 'Worn Leather Armor',
+    description: 'Scuffed leather chestplate offering basic protection.',
+    category: 'armor',
+    icon: 'item-worn-leather-armor',
+    maxStack: 1
+  },
+  old_boots: {
+    id: 'old_boots',
+    name: 'Old Boots',
+    description: 'A pair of durable old boots, perfect for long travels.',
+    category: 'armor',
+    icon: 'item-old-boots',
+    maxStack: 1
+  },
   apple: {
     id: 'apple',
     name: 'Apple',

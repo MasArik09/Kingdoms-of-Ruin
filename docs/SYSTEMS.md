@@ -59,3 +59,34 @@ Supports player, companion, chest, or settlement ownership dynamically:
 
 ## 4. Toast System (`ToastManager.ts`)
 A sliding notification popup overlay. Whenever a new toast is created, it moves all existing active toasts upwards to prevent overlap and slides/fades in the new message before fading it out after a set delay.
+
+---
+
+## 5. Equipment & Character Progression System
+Introduces character profile stats, slot mappings, and dynamic stat calculations synced between the PostgreSQL database and client UI.
+
+### Database Tables:
+- **`characters`**: The foundation progression table holding `id`, `name`, `level`, `experience`, and timestamps.
+- **`character_equipment`**: Maps active gear to slots with columns: `owner_type`, `owner_id`, `slot_id`, and `item_id`. It enforces a unique constraint on `(owner_type, owner_id, slot_id)` so each slot holds at most one item.
+
+### Backend Character Bootstrap Service:
+- Executes on server startup.
+- Uses a transaction to detect if the default character (`player_default`) exists. If missing, it creates the character and seeds starter equipment (`rusty_sword`, `traveler_hood`, `worn_leather_armor`, `old_boots`) directly into their inventory. This keeps the `GetInventory` API endpoint as a pure read operation.
+
+### Backend Slot Validation & Transaction Safety:
+- Equipment slot requests validate the `slot_id` against a strict `SlotIDRegistry` enum (`weapon`, `helmet`, `chest`, `gloves`, `boots`, `ring`) to avoid hardcoded string mismatches.
+- Equipping/unequipping items run inside database transactions to ensure atomic operations (reducing item quantity or deleting from inventory, returning any previously equipped item to the inventory, and updating the slot mapping).
+
+### Frontend Store & Derived Stats:
+- **`useCharacterStore` (Zustand)**: Calculates total stats (Base + Item bonuses) and evaluates derived ratings dynamically:
+  - **Max Health**: `100 + (Health * 10) + (Strength * 5)`
+  - **Max Stamina**: `100 + (Stamina * 5) + (Agility * 2)`
+  - **Attack Power**: `10 + (Strength * 2) + Weapon Attack Power`
+  - **Armor Rating**: `(Defense * 3) + Gear Armor Rating`
+  - **Move Speed**: `250 + (Agility * 1.5)`
+
+### UI Interfaces & Responsive Layout:
+- **`CharacterPanelUI`**: Opened via key `C`. Displays a paper doll equipment grid and base/derived character stats. Hovering over a slot shows equipped gear stats and exposes an interactive "UNEQUIP" zone.
+- **`InventoryUI`**: Renders rarity color borders around slots (Common, Uncommon, etc.). Selecting an equipable item reveals its stats and shows an "EQUIP" button in the detail card.
+- **Dynamic Positioning (`adjustLayout`)**: When both panels are opened, the UI shifts them side-by-side (Character Sheet left, Inventory right) to prevent overlap. Closing either panel centers the remaining open panel.
+

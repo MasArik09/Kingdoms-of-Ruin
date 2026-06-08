@@ -2,6 +2,9 @@ import Phaser from 'phaser';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { ItemRegistry } from '../config/itemRegistry';
 import { ItemCategory, ItemDefinition } from '../types/item';
+import { EquipmentRegistry, RarityColors } from '../config/equipmentRegistry';
+import { useCharacterStore } from '../stores/characterStore';
+import { CharacterPanelUI } from './CharacterPanelUI';
 
 export class InventoryUI extends Phaser.GameObjects.Container {
   private isOpen = false;
@@ -19,9 +22,12 @@ export class InventoryUI extends Phaser.GameObjects.Container {
   private detailTitleText!: Phaser.GameObjects.Text;
   private detailCategoryText!: Phaser.GameObjects.Text;
   private detailDescText!: Phaser.GameObjects.Text;
+  private equipBtnContainer!: Phaser.GameObjects.Container;
+  private equipBtnZone: Phaser.GameObjects.Zone | null = null;
 
   private panelWidth = 560;
   private panelHeight = 400;
+
 
   constructor(scene: Phaser.Scene) {
     const { width, height } = scene.scale;
@@ -182,7 +188,7 @@ export class InventoryUI extends Phaser.GameObjects.Container {
     });
   }
 
-  private createTabZones(): void {
+  public createTabZones(): void {
     this.tabZones.forEach(z => z.destroy());
     this.tabZones = [];
 
@@ -262,9 +268,29 @@ export class InventoryUI extends Phaser.GameObjects.Container {
       lineSpacing: 4,
     });
     this.detailsContainer.add(this.detailDescText);
+
+    // Equip button container
+    this.equipBtnContainer = this.scene.add.container(w / 2, h - 36);
+    this.detailsContainer.add(this.equipBtnContainer);
+
+    const btnBg = this.scene.add.graphics();
+    btnBg.fillStyle(0xd97706, 0.9); // Gold button
+    btnBg.fillRoundedRect(-50, -15, 100, 30, 4);
+    btnBg.lineStyle(1, 0xf59e0b, 0.6);
+    btnBg.strokeRoundedRect(-50, -15, 100, 30, 4);
+    
+    const btnTxt = this.scene.add.text(0, 0, 'EQUIP', {
+      fontFamily: 'Montserrat',
+      fontSize: '11px',
+      color: '#0f0c1b',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    this.equipBtnContainer.add([btnBg, btnTxt]);
+    this.equipBtnContainer.setVisible(false);
   }
 
-  private renderInventory(): void {
+  public renderInventory(): void {
     // Clear previous grid elements and slot zones
     this.gridContainer.removeAll(true);
     this.slotZones.forEach(z => z.destroy());
@@ -315,7 +341,27 @@ export class InventoryUI extends Phaser.GameObjects.Container {
       const bg = this.scene.add.graphics();
       bg.fillStyle(isSelected ? 0x1e1b4b : 0x131127, isSelected ? 0.9 : 0.7);
       bg.fillRoundedRect(0, 0, slotSize, slotSize, 4);
-      bg.lineStyle(isSelected ? 2 : 1.5, isSelected ? 0xd97706 : 0x4f46e5, isSelected ? 1.0 : 0.4);
+
+      let borderCol = 0x4f46e5;
+      let borderThick = 1.5;
+      let borderAlpha = 0.4;
+
+      if (isSelected) {
+        borderCol = 0xd97706;
+        borderThick = 2.0;
+        borderAlpha = 1.0;
+      } else if (isItem && def) {
+        const eqDef = EquipmentRegistry[def.id];
+        if (eqDef) {
+          borderCol = RarityColors[eqDef.rarity].border;
+          borderThick = 1.8;
+          borderAlpha = 0.85;
+        } else {
+          borderAlpha = 0.6;
+        }
+      }
+
+      bg.lineStyle(borderThick, borderCol, borderAlpha);
       bg.strokeRoundedRect(0, 0, slotSize, slotSize, 4);
       slot.add(bg);
 
@@ -394,15 +440,68 @@ export class InventoryUI extends Phaser.GameObjects.Container {
   }
 
   private showItemDetails(def: ItemDefinition): void {
-    this.detailTitleText.setText(def.name.toUpperCase());
-    this.detailCategoryText.setText(def.category.toUpperCase());
-    this.detailDescText.setText(def.description);
+    const eqDef = EquipmentRegistry[def.id];
+    this.cleanupEquipZone();
+
+    if (eqDef) {
+      const rarityInfo = RarityColors[eqDef.rarity];
+      this.detailTitleText.setText(def.name.toUpperCase());
+      this.detailTitleText.setStyle({ color: rarityInfo.hexString });
+      this.detailCategoryText.setText(`${rarityInfo.text.toUpperCase()} ${eqDef.slot.toUpperCase()}`);
+
+      let statsStr = '';
+      Object.entries(eqDef.stats).forEach(([statKey, val]) => {
+        if (val && val > 0) {
+          statsStr += `+${val} ${statKey.toUpperCase()}   `;
+        }
+      });
+      this.detailDescText.setText(`${def.description}\n\n${statsStr}`);
+
+      this.equipBtnContainer.setVisible(true);
+
+      const w = 160;
+      const h = 286;
+      const absBtnX = this.x + (this.panelWidth / 2 - 180) + w / 2;
+      const absBtnY = this.y - this.panelHeight / 2 + 90 + (h - 36);
+
+      this.equipBtnZone = this.scene.add.zone(absBtnX, absBtnY, 100, 30)
+        .setInteractive({ useHandCursor: true })
+        .setScrollFactor(0)
+        .setDepth(32000);
+
+      this.equipBtnZone.on('pointerdown', () => {
+        this.scene.tweens.add({
+          targets: this.equipBtnContainer,
+          scale: 0.92,
+          duration: 80,
+          yoyo: true,
+          onComplete: () => {
+            useCharacterStore.getState().equipItem(eqDef.slot, def.id).then((success) => {
+              if (success) {
+                this.selectedItem = null;
+                this.clearItemDetails();
+                this.renderInventory();
+              }
+            });
+          }
+        });
+      });
+    } else {
+      this.detailTitleText.setText(def.name.toUpperCase());
+      this.detailTitleText.setStyle({ color: '#f59e0b' });
+      this.detailCategoryText.setText(def.category.toUpperCase());
+      this.detailDescText.setText(def.description);
+      this.equipBtnContainer.setVisible(false);
+    }
   }
 
   private clearItemDetails(): void {
     this.detailTitleText.setText('NO ITEM SELECTED');
+    this.detailTitleText.setStyle({ color: '#f59e0b' });
     this.detailCategoryText.setText('');
     this.detailDescText.setText('Hover over an item slot to view details.');
+    this.equipBtnContainer.setVisible(false);
+    this.cleanupEquipZone();
   }
 
   private cleanupZones(): void {
@@ -410,9 +509,17 @@ export class InventoryUI extends Phaser.GameObjects.Container {
     this.tabZones = [];
     this.slotZones.forEach(z => z.destroy());
     this.slotZones = [];
+    this.cleanupEquipZone();
   }
 
-  public toggle(): void {
+  private cleanupEquipZone(): void {
+    if (this.equipBtnZone) {
+      this.equipBtnZone.destroy();
+      this.equipBtnZone = null;
+    }
+  }
+
+  public toggle(characterPanelUI?: CharacterPanelUI): void {
     this.isOpen = !this.isOpen;
     this.setVisible(this.isOpen);
 
@@ -422,6 +529,13 @@ export class InventoryUI extends Phaser.GameObjects.Container {
       this.updateTabStyles();
       this.renderInventory();
       this.createTabZones();
+
+      // Dynamic side-by-side positioning check
+      if (characterPanelUI && characterPanelUI.getIsOpen()) {
+        characterPanelUI.adjustLayout(this);
+      } else {
+        this.setPosition(this.scene.scale.width / 2, this.scene.scale.height / 2);
+      }
 
       // Soft slide-in animation
       const targetY = this.scene.scale.height / 2;
@@ -438,6 +552,13 @@ export class InventoryUI extends Phaser.GameObjects.Container {
       this.cleanupZones();
       this.selectedItem = null;
       this.clearItemDetails();
+
+      // Reset layout for character panel if it remains open
+      if (characterPanelUI && characterPanelUI.getIsOpen()) {
+        characterPanelUI.setPosition(this.scene.scale.width / 2, this.scene.scale.height / 2);
+        characterPanelUI.renderEquipment();
+        characterPanelUI.renderStats();
+      }
     }
   }
 

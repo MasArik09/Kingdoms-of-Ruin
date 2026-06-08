@@ -711,6 +711,104 @@ export class BootScene extends Phaser.Scene {
     }
     campfireGlow.generateTexture('campfire-glow', 160, 160);
 
+    // 25. Item: Rusty Sword (64x64)
+    const rustySword = this.make.graphics();
+    rustySword.fillStyle(0x451a03, 1); // Brown handle
+    rustySword.fillRect(30, 42, 4, 14);
+    rustySword.fillStyle(0xd97706, 1); // Golden guard
+    rustySword.fillRect(22, 40, 20, 4);
+    rustySword.fillStyle(0xbababa, 1); // Steel blade
+    rustySword.beginPath();
+    rustySword.moveTo(29, 40);
+    rustySword.lineTo(29, 10);
+    rustySword.lineTo(32, 6); // Point
+    rustySword.lineTo(35, 10);
+    rustySword.lineTo(35, 40);
+    rustySword.closePath();
+    rustySword.fillPath();
+    rustySword.fillStyle(0x92400e, 0.7); // Rust
+    rustySword.fillRect(30, 16, 3, 4);
+    rustySword.fillRect(31, 30, 3, 5);
+    rustySword.generateTexture('item-rusty-sword', 64, 64);
+
+    // 26. Item: Traveler Hood (64x64)
+    const travelerHood = this.make.graphics();
+    travelerHood.fillStyle(0x312e81, 1); // Dark indigo hood
+    travelerHood.beginPath();
+    travelerHood.moveTo(32, 12);
+    travelerHood.lineTo(16, 30);
+    travelerHood.lineTo(14, 52);
+    travelerHood.lineTo(50, 52);
+    travelerHood.lineTo(48, 30);
+    travelerHood.closePath();
+    travelerHood.fillPath();
+    travelerHood.fillStyle(0x0f0c1b, 1); // Face shadow opening
+    travelerHood.fillEllipse(32, 34, 12, 16);
+    travelerHood.lineStyle(1.5, 0x4f46e5, 0.8); // Folds
+    travelerHood.beginPath();
+    travelerHood.moveTo(32, 12);
+    travelerHood.lineTo(24, 28);
+    travelerHood.lineTo(18, 48);
+    travelerHood.strokePath();
+    travelerHood.generateTexture('item-traveler-hood', 64, 64);
+
+    // 27. Item: Worn Leather Armor (64x64)
+    const wornLeather = this.make.graphics();
+    wornLeather.fillStyle(0x5c240b, 1); // Dark brown leather vest
+    wornLeather.fillRoundedRect(16, 16, 32, 36, 4);
+    wornLeather.fillStyle(0x451a03, 1); // Shoulder straps
+    wornLeather.fillRect(16, 16, 8, 14);
+    wornLeather.fillRect(40, 16, 8, 14);
+    wornLeather.fillStyle(0x0f0c1b, 1); // Neck opening
+    wornLeather.fillEllipse(32, 16, 8, 6);
+    wornLeather.fillStyle(0x94a3b8, 1); // Rivets
+    wornLeather.fillCircle(20, 24, 2);
+    wornLeather.fillCircle(44, 24, 2);
+    wornLeather.fillCircle(20, 36, 2);
+    wornLeather.fillCircle(44, 36, 2);
+    wornLeather.lineStyle(1.5, 0xb45309, 0.8); // Scuffs
+    wornLeather.beginPath();
+    wornLeather.moveTo(24, 30);
+    wornLeather.lineTo(30, 34);
+    wornLeather.moveTo(38, 40);
+    wornLeather.lineTo(42, 42);
+    wornLeather.strokePath();
+    wornLeather.generateTexture('item-worn-leather-armor', 64, 64);
+
+    // 28. Item: Old Boots (64x64)
+    const oldBoots = this.make.graphics();
+    oldBoots.fillStyle(0x2d1202, 1); // Dark scuffed brown
+    oldBoots.fillRoundedRect(18, 22, 10, 26, 2);
+    oldBoots.fillRect(18, 40, 16, 8); // Sole
+    oldBoots.fillRoundedRect(36, 22, 10, 26, 2);
+    oldBoots.fillRect(30, 40, 16, 8); // Sole
+    oldBoots.lineStyle(1, 0x78350f, 0.9); // Laces
+    oldBoots.beginPath();
+    oldBoots.moveTo(18, 28);
+    oldBoots.lineTo(28, 28);
+    oldBoots.moveTo(18, 34);
+    oldBoots.lineTo(28, 34);
+    oldBoots.moveTo(36, 28);
+    oldBoots.lineTo(46, 28);
+    oldBoots.moveTo(36, 34);
+    oldBoots.lineTo(46, 34);
+    oldBoots.strokePath();
+    oldBoots.generateTexture('item-old-boots', 64, 64);
+
+    // 29. Item: Leather Armor (64x64)
+    const leatherArmor = this.make.graphics();
+    leatherArmor.fillStyle(0x78350f, 1); // Clean medium brown vest
+    leatherArmor.fillRoundedRect(16, 16, 32, 36, 4);
+    leatherArmor.fillStyle(0x5c240b, 1); // Straps
+    leatherArmor.fillRect(16, 16, 8, 14);
+    leatherArmor.fillRect(40, 16, 8, 14);
+    leatherArmor.fillStyle(0x0f0c1b, 1); // Neck
+    leatherArmor.fillEllipse(32, 16, 8, 6);
+    leatherArmor.fillStyle(0xf59e0b, 1); // Buckles
+    leatherArmor.fillCircle(20, 24, 2);
+    leatherArmor.fillCircle(44, 24, 2);
+    leatherArmor.generateTexture('item-leather-armor', 64, 64);
+
     console.log('BootScene: Textures generated. Launching MainMenuScene...');
     this.scene.start('MainMenuScene');
   }
