@@ -11,6 +11,8 @@ import { ToastManager } from '../ui/ToastManager';
 import { InventoryUI } from '../ui/InventoryUI';
 import { CharacterPanelUI } from '../ui/CharacterPanelUI';
 import { useCharacterStore } from '../stores/characterStore';
+import { PaperDoll } from '../ui/PaperDoll';
+import { HUDManager } from '../ui/HUDManager';
 
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
@@ -21,6 +23,10 @@ export class WorldScene extends Phaser.Scene {
   private inventoryUI!: InventoryUI;
   private characterPanelUI!: CharacterPanelUI;
 
+  // Refactored modular sub-systems
+  private hudManager!: HUDManager;
+  private paperDoll!: PaperDoll;
+
   private tabKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
@@ -29,23 +35,6 @@ export class WorldScene extends Phaser.Scene {
     left: Phaser.Input.Keyboard.Key;
     right: Phaser.Input.Keyboard.Key;
   };
-  
-  // UI Containers for dynamic anchoring
-  private topLeftContainer!: Phaser.GameObjects.Container;
-  private hudMenuContainer!: Phaser.GameObjects.Container;
-  private hudActionBarContainer!: Phaser.GameObjects.Container;
-  private instructionsContainer!: Phaser.GameObjects.Container;
-  private debugContainer!: Phaser.GameObjects.Container;
-
-  private inventoryBtnBg!: Phaser.GameObjects.Graphics;
-  private inventoryBtnIcon!: Phaser.GameObjects.Image;
-  private characterBtnBg!: Phaser.GameObjects.Graphics;
-  private characterBtnIcon!: Phaser.GameObjects.Image;
-
-  // Text nodes
-  private hudCoordinatesText!: Phaser.GameObjects.Text;
-  private hudBackendStatusText!: Phaser.GameObjects.Text;
-  private debugText!: Phaser.GameObjects.Text;
 
   // Tweens
   private idleTween!: Phaser.Tweens.Tween;
@@ -199,6 +188,9 @@ export class WorldScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(storePos.x, storePos.y, 'player');
     this.player.setCollideWorldBounds(true);
     
+    // Setup player equipment sprites
+    this.paperDoll = new PaperDoll(this, this.player);
+    
     // Spawn Campfire Landmark
     new Campfire(this, 920, 980, this.interactionSystem);
 
@@ -281,22 +273,32 @@ export class WorldScene extends Phaser.Scene {
       };
     }
 
-    // 12. Create HUD Elements
-    this.createHUD();
-    this.createDebugOverlay();
+    // 12. Initialize HUD Manager
+    this.hudManager = new HUDManager(this, {
+      onToggleInventory: () => this.toggleInventory(),
+      onToggleCharacterPanel: () => this.toggleCharacterPanel(),
+      onMainMenu: () => {
+        this.cameras.main.fade(600, 10, 6, 20);
+        this.scene.start('MainMenuScene');
+      }
+    });
 
     // Initial positioning
     this.resize(this.scale);
 
-    // 13. Hook up resize event listener
+    // 13. Hook up resize and postupdate event listeners
     this.scale.on('resize', this.resize, this);
+    this.events.on('postupdate', this.postUpdate, this);
 
     this.events.once('shutdown', () => {
       this.scale.off('resize', this.resize, this);
+      this.events.off('postupdate', this.postUpdate, this);
       if (this.interactionManager) this.interactionManager.destroy();
       if (this.toastManager) this.toastManager.destroy();
       if (this.inventoryUI) this.inventoryUI.destroy();
       if (this.characterPanelUI) this.characterPanelUI.destroy();
+      if (this.hudManager) this.hudManager.destroy();
+      if (this.paperDoll) this.paperDoll.destroy();
     });
 
     // Camera fade-in
@@ -340,13 +342,6 @@ export class WorldScene extends Phaser.Scene {
 
     this.player.setVelocity(vx, vy);
 
-    // Sync player shadow position
-    this.playerShadow.setPosition(this.player.x, this.player.y + 24);
-
-    // Sync depth sorting
-    this.player.setDepth(this.player.y);
-    this.playerShadow.setDepth(this.player.y - 1);
-
     // Flip horizontal scale based on motion direction
     if (vx < 0) {
       this.player.setFlipX(true);
@@ -386,27 +381,19 @@ export class WorldScene extends Phaser.Scene {
     const px = Math.round(this.player.x);
     const py = Math.round(this.player.y);
     
-    this.hudCoordinatesText.setText(`POSITION: X: ${px}, Y: ${py}`);
+    this.hudManager.updateCoordinates(px, py);
     usePlayerStore.getState().setPlayerPosition(px, py);
 
     // Update debug text
     const fps = Math.round(this.game.loop.actualFps);
-    this.debugText.setText(
-      `SCENE: WorldScene\nFPS: ${fps}\nCOORDS: [${px}, [${py}]]\nSYS: Phaser 3 + TS\nDB: Active Pool`
-    );
+    this.hudManager.updateDebugText(fps, px, py);
   }
 
   private resize(gameSize: { width: number; height: number }) {
     const { width, height } = gameSize;
 
-    // Anchor HUD elements dynamically to window edges with 32px Spacious Safe-Area padding
-    const safePadding = 32;
-    
-    this.topLeftContainer.setPosition(safePadding, safePadding);
-    this.hudMenuContainer.setPosition(safePadding, height - 40 - safePadding);
-    this.hudActionBarContainer.setPosition(safePadding, safePadding + 100 + 12);
-    this.instructionsContainer.setPosition(width - 300 - safePadding, height - 60 - safePadding);
-    this.debugContainer.setPosition(width - 220 - safePadding, safePadding);
+    // Delegate HUD positioning to HUDManager
+    this.hudManager.resize(width, height);
 
     // Call adjustLayout on characterPanelUI if it exists to maintain side-by-side positioning on resize
     if (this.characterPanelUI && this.characterPanelUI.getIsOpen()) {
@@ -418,218 +405,6 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private createHUD() {
-    // Top-left stats container
-    this.topLeftContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
-
-    const headerBg = this.add.graphics();
-    headerBg.fillStyle(0x0f0c1b, 0.85);
-    headerBg.fillRoundedRect(0, 0, 280, 100, 8);
-    headerBg.lineStyle(1.5, 0xd97706, 0.6);
-    headerBg.strokeRoundedRect(0, 0, 280, 100, 8);
-    this.topLeftContainer.add(headerBg);
-
-    const hudTitle = this.add.text(16, 12, 'KINGDOMS OF RUIN', {
-      fontFamily: 'Cinzel',
-      fontSize: '15px',
-      color: '#f59e0b',
-      fontStyle: 'bold',
-    });
-    this.topLeftContainer.add(hudTitle);
-
-    this.hudCoordinatesText = this.add.text(16, 38, 'POSITION: X: 0, Y: 0', {
-      fontFamily: 'Montserrat',
-      fontSize: '12px',
-      color: '#cbd5e1',
-    });
-    this.topLeftContainer.add(this.hudCoordinatesText);
-
-    this.hudBackendStatusText = this.add.text(16, 60, 'BACKEND: CONNECTING...', {
-      fontFamily: 'Montserrat',
-      fontSize: '12px',
-      color: '#94a3b8',
-      fontStyle: '700',
-    });
-    this.topLeftContainer.add(this.hudBackendStatusText);
-
-    // Bottom-right instructions container
-    this.instructionsContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
-
-    const instructionsBg = this.add.graphics();
-    instructionsBg.fillStyle(0x0f0c1b, 0.85);
-    instructionsBg.fillRoundedRect(0, 0, 300, 60, 8);
-    instructionsBg.lineStyle(1.5, 0x3b82f6, 0.5);
-    instructionsBg.strokeRoundedRect(0, 0, 300, 60, 8);
-    this.instructionsContainer.add(instructionsBg);
-
-    const instructionsText = this.add.text(16, 12, 'CONTROLS: WASD / ARROWS\nBOUNDED WORLD PROTOTYPE', {
-      fontFamily: 'Montserrat',
-      fontSize: '12px',
-      color: '#93c5fd',
-      fontStyle: 'bold',
-      lineSpacing: 4,
-    });
-    this.instructionsContainer.add(instructionsText);
-
-    // Bottom-left Navigation Bar container
-    this.hudMenuContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
-
-    // Button 1: Main Menu
-    const menuBtnX = 0;
-    const menuBtnY = 0;
-    const menuBtnW = 140;
-    const menuBtnH = 40;
-    const menuBtnBg = this.add.graphics();
-    menuBtnBg.fillStyle(HUD_THEME.bgDefault, 0.85);
-    menuBtnBg.fillRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
-    menuBtnBg.lineStyle(1.5, HUD_THEME.borderDefault, 0.7);
-    menuBtnBg.strokeRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
-    this.hudMenuContainer.add(menuBtnBg);
-
-    const menuBtnText = this.add.text(menuBtnX + menuBtnW / 2, menuBtnY + menuBtnH / 2, 'MAIN MENU', {
-      fontFamily: 'Montserrat',
-      fontSize: '12px',
-      color: HUD_THEME.textMenuDefault,
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-    this.hudMenuContainer.add(menuBtnText);
-
-    menuBtnText.setScrollFactor(0);
-    menuBtnText.setInteractive({ useHandCursor: true });
-    menuBtnText.on('pointerover', () => {
-      menuBtnText.setStyle({ color: HUD_THEME.textHover });
-      menuBtnBg.clear();
-      menuBtnBg.fillStyle(HUD_THEME.bgHover, 0.9);
-      menuBtnBg.fillRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
-      menuBtnBg.lineStyle(1.5, HUD_THEME.borderHover, 0.95);
-      menuBtnBg.strokeRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
-    });
-    menuBtnText.on('pointerout', () => {
-      menuBtnText.setStyle({ color: HUD_THEME.textMenuDefault });
-      menuBtnBg.clear();
-      menuBtnBg.fillStyle(HUD_THEME.bgDefault, 0.85);
-      menuBtnBg.fillRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
-      menuBtnBg.lineStyle(1.5, HUD_THEME.borderDefault, 0.7);
-      menuBtnBg.strokeRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
-    });
-    menuBtnText.on('pointerdown', () => {
-      this.cameras.main.fade(600, 10, 6, 20);
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('MainMenuScene');
-      });
-    });
-
-    // Bottom-center Action Bar container
-    this.hudActionBarContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
-
-    const barW = 56;
-    const barH = 112;
-    const barBg = this.add.graphics();
-    barBg.fillStyle(0x0f0c1b, 0.85);
-    barBg.fillRoundedRect(0, 0, barW, barH, 8);
-    barBg.lineStyle(1.5, 0x4f46e5, 0.6);
-    barBg.strokeRoundedRect(0, 0, barW, barH, 8);
-    this.hudActionBarContainer.add(barBg);
-
-    // Button 2: Inventory Icon Button
-    const invBtnX = 4;
-    const invBtnY = 4;
-    const btnSize = 48;
-
-    this.inventoryBtnBg = this.add.graphics();
-    this.drawIconButtonBorder(this.inventoryBtnBg, invBtnX, invBtnY, btnSize, false);
-    this.hudActionBarContainer.add(this.inventoryBtnBg);
-
-    this.inventoryBtnIcon = this.add.image(invBtnX + btnSize / 2, invBtnY + btnSize / 2, 'icon-inventory');
-    this.hudActionBarContainer.add(this.inventoryBtnIcon);
-
-    this.inventoryBtnIcon.setScrollFactor(0);
-    this.inventoryBtnIcon.setInteractive({ useHandCursor: true });
-    this.inventoryBtnIcon.on('pointerover', () => {
-      this.tweens.add({
-        targets: this.inventoryBtnIcon,
-        scale: 1.12,
-        duration: 100,
-        ease: 'Quad.easeOut'
-      });
-      if (!this.inventoryUI || !this.inventoryUI.getIsOpen()) {
-        this.drawIconButtonBorder(this.inventoryBtnBg, invBtnX, invBtnY, btnSize, false, true);
-      }
-    });
-    this.inventoryBtnIcon.on('pointerout', () => {
-      this.tweens.add({
-        targets: this.inventoryBtnIcon,
-        scale: 1.0,
-        duration: 100,
-        ease: 'Quad.easeOut'
-      });
-      this.updateMenuButtonsHighlight();
-    });
-    this.inventoryBtnIcon.on('pointerdown', () => {
-      this.toggleInventory();
-    });
-
-    // Button 3: Character Panel Icon Button
-    const charBtnX = 4;
-    const charBtnY = 60;
-
-    this.characterBtnBg = this.add.graphics();
-    this.drawIconButtonBorder(this.characterBtnBg, charBtnX, charBtnY, btnSize, false);
-    this.hudActionBarContainer.add(this.characterBtnBg);
-
-    this.characterBtnIcon = this.add.image(charBtnX + btnSize / 2, charBtnY + btnSize / 2, 'icon-character');
-    this.hudActionBarContainer.add(this.characterBtnIcon);
-
-    this.characterBtnIcon.setScrollFactor(0);
-    this.characterBtnIcon.setInteractive({ useHandCursor: true });
-    this.characterBtnIcon.on('pointerover', () => {
-      this.tweens.add({
-        targets: this.characterBtnIcon,
-        scale: 1.12,
-        duration: 100,
-        ease: 'Quad.easeOut'
-      });
-      if (!this.characterPanelUI || !this.characterPanelUI.getIsOpen()) {
-        this.drawIconButtonBorder(this.characterBtnBg, charBtnX, charBtnY, btnSize, false, true);
-      }
-    });
-    this.characterBtnIcon.on('pointerout', () => {
-      this.tweens.add({
-        targets: this.characterBtnIcon,
-        scale: 1.0,
-        duration: 100,
-        ease: 'Quad.easeOut'
-      });
-      this.updateMenuButtonsHighlight();
-    });
-    this.characterBtnIcon.on('pointerdown', () => {
-      this.toggleCharacterPanel();
-    });
-  }
-
-  private createDebugOverlay() {
-    // Top-right debug container
-    this.debugContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
-
-    const debugBg = this.add.graphics();
-    debugBg.fillStyle(0x090514, 0.9);
-    debugBg.fillRoundedRect(0, 0, 220, 110, 8);
-    debugBg.lineStyle(1.5, 0xef4444, 0.6);
-    debugBg.strokeRoundedRect(0, 0, 220, 110, 8);
-    this.debugContainer.add(debugBg);
-
-    const debugTitle = this.add.text(16, 8, 'UI DEBUG OVERLAY', onDebugStyleText('#f87171'));
-    this.debugContainer.add(debugTitle);
-
-    this.debugText = this.add.text(16, 28, 'SCENE: WorldScene\nFPS: 0\nCOORDS: [0, 0]\nSYS: Phaser 3 + TS\nDB: Active Pool', {
-      fontFamily: 'Courier New',
-      fontSize: '11px',
-      color: '#cbd5e1',
-      lineSpacing: 4,
-    });
-    this.debugContainer.add(this.debugText);
-  }
-
   private checkBackendStatus() {
     fetch('/api/health')
       .then((res) => {
@@ -638,90 +413,50 @@ export class WorldScene extends Phaser.Scene {
       })
       .then((data) => {
         if (data.status === 'ok') {
-          this.hudBackendStatusText.setText('BACKEND: ONLINE (DB CONNECTED)');
-          this.hudBackendStatusText.setStyle({ color: '#10b981' });
+          this.hudManager.updateBackendStatus(true);
         } else {
-          this.hudBackendStatusText.setText('BACKEND: DB OFFLINE');
-          this.hudBackendStatusText.setStyle({ color: '#ef4444' });
+          this.hudManager.updateBackendStatus(false, 'BACKEND: DB OFFLINE');
         }
       })
       .catch((err) => {
         console.error('Failed to communicate with Go backend:', err);
-        this.hudBackendStatusText.setText('BACKEND: OFFLINE (API ERROR)');
-        this.hudBackendStatusText.setStyle({ color: '#f59e0b' });
+        this.hudManager.updateBackendStatus(false, 'BACKEND: OFFLINE (API ERROR)');
       });
   }
 
   private toggleInventory() {
     this.inventoryUI.toggle(this.characterPanelUI);
-    this.updateMenuButtonsHighlight();
+    this.hudManager.updateMenuButtonsHighlight(
+      this.inventoryUI.getIsOpen(),
+      this.characterPanelUI.getIsOpen()
+    );
   }
 
   private toggleCharacterPanel() {
     this.characterPanelUI.toggle(this.inventoryUI);
-    this.updateMenuButtonsHighlight();
+    this.hudManager.updateMenuButtonsHighlight(
+      this.inventoryUI.getIsOpen(),
+      this.characterPanelUI.getIsOpen()
+    );
   }
 
-  private drawIconButtonBorder(
-    graphics: Phaser.GameObjects.Graphics,
-    x: number,
-    y: number,
-    size: number,
-    isOpen: boolean,
-    isHover = false
-  ) {
-    graphics.clear();
-    if (isOpen) {
-      graphics.fillStyle(HUD_THEME.bgActive, 0.4);
-      graphics.fillRoundedRect(x, y, size, size, 6);
-      graphics.lineStyle(1.8, HUD_THEME.borderActive, 1.0);
-      graphics.strokeRoundedRect(x, y, size, size, 6);
-    } else if (isHover) {
-      graphics.fillStyle(HUD_THEME.bgHover, 0.3);
-      graphics.fillRoundedRect(x, y, size, size, 6);
-      graphics.lineStyle(1.5, HUD_THEME.borderHover, 0.95);
-      graphics.strokeRoundedRect(x, y, size, size, 6);
-    } else {
-      graphics.fillStyle(0x0f0c1b, 0.3);
-      graphics.fillRoundedRect(x, y, size, size, 6);
-      graphics.lineStyle(1.5, HUD_THEME.borderDefault, 0.5);
-      graphics.strokeRoundedRect(x, y, size, size, 6);
-    }
-  }
+  private postUpdate() {
+    if (!this.player || !this.player.active) return;
 
-  private updateMenuButtonsHighlight() {
-    const isInventoryOpen = this.inventoryUI && this.inventoryUI.getIsOpen();
-    const isCharacterOpen = this.characterPanelUI && this.characterPanelUI.getIsOpen();
-
-    if (this.inventoryBtnBg) {
-      this.drawIconButtonBorder(this.inventoryBtnBg, 4, 4, 48, isInventoryOpen);
+    // Sync player shadow position
+    if (this.playerShadow && this.playerShadow.active) {
+      this.playerShadow.setPosition(this.player.x, this.player.y + 24);
     }
-    if (this.characterBtnBg) {
-      this.drawIconButtonBorder(this.characterBtnBg, 4, 60, 48, isCharacterOpen);
+
+    // Depth sorting
+    this.player.setDepth(this.player.y);
+    if (this.playerShadow && this.playerShadow.active) {
+      this.playerShadow.setDepth(this.player.y - 1);
+    }
+
+    // Sync player equipment positions (runs post-physics, eliminating sync lag)
+    if (this.paperDoll) {
+      this.paperDoll.syncPositions();
     }
   }
 }
-
-function onDebugStyleText(color: string) {
-  return {
-    fontFamily: 'Montserrat',
-    fontSize: '11px',
-    color: color,
-    fontStyle: 'bold',
-  };
-}
-
-const HUD_THEME = {
-  bgDefault: 0x1e1b4b,
-  bgHover: 0x2e1065,
-  bgActive: 0xd97706,
-  
-  borderDefault: 0x4f46e5,
-  borderHover: 0xd97706,
-  borderActive: 0xf59e0b,
-
-  textMenuDefault: '#c084fc',
-  textBtnDefault: '#cbd5e1',
-  textActive: '#0f0c1b',
-  textHover: '#f59e0b'
-};

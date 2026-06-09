@@ -493,67 +493,136 @@ export class BootScene extends Phaser.Scene {
     const playerGraphics = this.make.graphics();
     // SOLID BLACK BACKING (Outline Silhouette)
     playerGraphics.fillStyle(0x000000, 1);
-    playerGraphics.fillRect(18, 32, 28, 29); // Cape shadow
-    playerGraphics.fillCircle(32, 42, 19); // Chestplate shadow
-    playerGraphics.fillCircle(32, 20, 15); // Helmet shadow
-    playerGraphics.fillRect(27, 0, 10, 12); // Plume shadow
+    playerGraphics.fillRect(18, 32, 28, 20); // Cape shadow
+    // Tapered chest outline
+    playerGraphics.beginPath();
+    playerGraphics.moveTo(23, 27);
+    playerGraphics.lineTo(41, 27);
+    playerGraphics.lineTo(47, 33);
+    playerGraphics.lineTo(43, 51);
+    playerGraphics.lineTo(21, 51);
+    playerGraphics.lineTo(17, 33);
+    playerGraphics.closePath();
+    playerGraphics.fillPath();
+
+    playerGraphics.fillCircle(32, 17, 14); // Helmet shadow
+    playerGraphics.fillRect(29, 0, 6, 12); // Plume shadow
+    playerGraphics.fillCircle(16, 32, 7.5); // Left shoulder shadow
+    playerGraphics.fillCircle(48, 32, 7.5); // Right shoulder shadow
+    playerGraphics.fillRoundedRect(20, 50, 10, 12, 3); // Left leg shadow
+    playerGraphics.fillRoundedRect(34, 50, 10, 12, 3); // Right leg shadow
 
     // Crimson Cape/Cloak
     playerGraphics.fillStyle(0x991b1b, 1);
-    playerGraphics.fillRect(20, 34, 24, 26);
+    playerGraphics.fillRect(18, 32, 28, 20);
     playerGraphics.fillStyle(0xdc2626, 1);
-    playerGraphics.fillRect(22, 34, 4, 26);
-    playerGraphics.fillRect(38, 34, 4, 26);
+    playerGraphics.fillRect(20, 32, 3, 20);
+    playerGraphics.fillRect(41, 32, 3, 20);
 
-    // Steel Shoulder Plates / Body Armor
-    playerGraphics.fillStyle(0x334155, 1);
-    playerGraphics.fillCircle(32, 42, 16);
+    // Steel Legs (greaves)
+    playerGraphics.fillStyle(0x334155, 1); // Dark steel legs
+    playerGraphics.fillRect(21, 51, 8, 10);
+    playerGraphics.fillRect(35, 51, 8, 10);
+    playerGraphics.fillStyle(0x475569, 1); // Lighter steel highlights
+    playerGraphics.fillRect(22, 51, 6, 8);
+    playerGraphics.fillRect(36, 51, 6, 8);
+    playerGraphics.lineStyle(1, 0x1e293b, 1);
+    playerGraphics.strokeRect(21, 51, 8, 10);
+    playerGraphics.strokeRect(35, 51, 8, 10);
 
-    // Chestplate details: silver highlights and shiny central ridge
+    // Torso / Tapered Chestplate
+    playerGraphics.fillStyle(0x334155, 1); // Steel torso base
+    playerGraphics.beginPath();
+    playerGraphics.moveTo(24, 28);
+    playerGraphics.lineTo(40, 28);
+    playerGraphics.lineTo(46, 34);
+    playerGraphics.lineTo(42, 50);
+    playerGraphics.lineTo(22, 50);
+    playerGraphics.lineTo(18, 34);
+    playerGraphics.closePath();
+    playerGraphics.fillPath();
+
+    playerGraphics.fillStyle(0x475569, 1); // Chestplate highlight
+    playerGraphics.beginPath();
+    playerGraphics.moveTo(25, 29);
+    playerGraphics.lineTo(39, 29);
+    playerGraphics.lineTo(44, 34);
+    playerGraphics.lineTo(41, 49);
+    playerGraphics.lineTo(23, 49);
+    playerGraphics.lineTo(20, 34);
+    playerGraphics.closePath();
+    playerGraphics.fillPath();
+
+    playerGraphics.fillStyle(0x64748b, 1); // Shiny middle plate
+    playerGraphics.beginPath();
+    playerGraphics.moveTo(27, 30);
+    playerGraphics.lineTo(37, 30);
+    playerGraphics.lineTo(40, 34);
+    playerGraphics.lineTo(38, 48);
+    playerGraphics.lineTo(26, 48);
+    playerGraphics.lineTo(24, 34);
+    playerGraphics.closePath();
+    playerGraphics.fillPath();
+
+    playerGraphics.fillStyle(0x94a3b8, 1); // Central vertical shiny ridge
+    playerGraphics.fillRect(30, 28, 4, 22);
+
+    // Shoulder Pauldrons
+    // Left shoulder plate
     playerGraphics.fillStyle(0x475569, 1);
-    playerGraphics.fillCircle(32, 42, 14);
+    playerGraphics.fillCircle(16, 32, 5.5);
     playerGraphics.fillStyle(0x64748b, 1);
-    playerGraphics.fillCircle(32, 42, 11);
+    playerGraphics.fillCircle(16, 32, 4.5);
     playerGraphics.fillStyle(0x94a3b8, 1);
-    playerGraphics.fillRect(29, 32, 6, 16); // Shiny central ridge
+    playerGraphics.fillCircle(15, 31, 2);
+
+    // Right shoulder plate
+    playerGraphics.fillStyle(0x475569, 1);
+    playerGraphics.fillCircle(48, 32, 5.5);
+    playerGraphics.fillStyle(0x64748b, 1);
+    playerGraphics.fillCircle(48, 32, 4.5);
+    playerGraphics.fillStyle(0x94a3b8, 1);
+    playerGraphics.fillCircle(47, 31, 2);
 
     // Gold Shield/Crest Emblem in center (medieval coat of arms)
     playerGraphics.fillStyle(0xd97706, 1); // Dark gold border
     playerGraphics.beginPath();
-    playerGraphics.moveTo(27, 36);
-    playerGraphics.lineTo(37, 36);
-    playerGraphics.lineTo(37, 43);
-    playerGraphics.lineTo(32, 48); // Shield point
-    playerGraphics.lineTo(27, 43);
+    playerGraphics.moveTo(27, 35);
+    playerGraphics.lineTo(37, 35);
+    playerGraphics.lineTo(37, 41);
+    playerGraphics.lineTo(32, 46); // Shield point
+    playerGraphics.lineTo(27, 41);
     playerGraphics.closePath();
     playerGraphics.fillPath();
 
     playerGraphics.fillStyle(0xf59e0b, 1); // Light gold inside
     playerGraphics.beginPath();
-    playerGraphics.moveTo(29, 38);
-    playerGraphics.lineTo(35, 38);
-    playerGraphics.lineTo(35, 42);
-    playerGraphics.lineTo(32, 45);
-    playerGraphics.lineTo(29, 42);
+    playerGraphics.moveTo(29, 37);
+    playerGraphics.lineTo(35, 37);
+    playerGraphics.lineTo(35, 40);
+    playerGraphics.lineTo(32, 43);
+    playerGraphics.lineTo(29, 40);
     playerGraphics.closePath();
     playerGraphics.fillPath();
 
     // Helmet & Plume
     playerGraphics.fillStyle(0xb91c1c, 1); // Red knight plume
-    playerGraphics.fillRect(29, 2, 6, 10);
+    playerGraphics.fillRect(29, 0, 6, 10);
     playerGraphics.fillStyle(0xef4444, 1);
-    playerGraphics.fillRect(31, 2, 2, 8);
+    playerGraphics.fillRect(31, 0, 2, 8);
 
     playerGraphics.fillStyle(0x475569, 1); // Steel helmet
-    playerGraphics.fillCircle(32, 20, 12);
+    playerGraphics.fillCircle(32, 17, 11);
+    playerGraphics.fillStyle(0x64748b, 1);
+    playerGraphics.fillCircle(32, 17, 9);
 
     // Helmet Visor (glowing blue visor slit)
     playerGraphics.fillStyle(0x1e293b, 1); // Dark visor plate
-    playerGraphics.fillRoundedRect(20, 14, 24, 10, 4);
+    playerGraphics.fillRoundedRect(20, 12, 24, 10, 3);
     playerGraphics.fillStyle(0x0f172a, 1); // Dark visor slit
-    playerGraphics.fillRect(22, 17, 20, 4);
+    playerGraphics.fillRect(22, 15, 20, 4);
     playerGraphics.fillStyle(0x22d3ee, 1); // Glowing cyan energy eye-slit
-    playerGraphics.fillRect(24, 18, 16, 2);
+    playerGraphics.fillRect(24, 16, 16, 2);
     playerGraphics.generateTexture('player', 64, 64);
 
     // 14. High-Quality Cratered Moon Texture (128x128)
@@ -878,6 +947,89 @@ export class BootScene extends Phaser.Scene {
     charIconGraphics.fillStyle(0x22d3ee, 1); // Glowing energy
     charIconGraphics.fillRect(16, 25, 16, 2);
     charIconGraphics.generateTexture('icon-character', 48, 48);
+
+    // ==========================================
+    // CHARACTER-FIT OVERLAY GRAPHICS (64x64)
+    // ==========================================
+
+    // 1. Helmet Overlay: Traveler Hood (Indigo cowl framing the head at y = 15, covering the plume and showing glowing eyes in shadow)
+    const travelerHoodChar = this.make.graphics();
+    
+    // Outline (Silhouettes)
+    travelerHoodChar.fillStyle(0x000000, 1);
+    travelerHoodChar.fillCircle(32, 15, 15); // Rounded top outline covering plume
+    travelerHoodChar.fillRoundedRect(17, 19, 30, 12, 4); // Soft shoulder drape outline
+
+    // Hood fabric base
+    travelerHoodChar.fillStyle(0x312e81, 1); // Dark indigo hood base
+    travelerHoodChar.fillCircle(32, 15, 13); // Rounded top head
+    travelerHoodChar.fillRoundedRect(19, 20, 26, 10, 3); // Soft shoulder drape
+
+    // Folds & Highlights
+    travelerHoodChar.fillStyle(0x4338ca, 1); // Lighter folds
+    travelerHoodChar.fillRect(19, 21, 3, 8);
+    travelerHoodChar.fillRect(42, 21, 3, 8);
+
+    // Dark face opening shadow
+    travelerHoodChar.fillStyle(0x0f0c1b, 1);
+    travelerHoodChar.fillRoundedRect(21, 9, 22, 11, 3);
+
+    // Glowing cyan visor energy slit (only eyes visible in dark cowl)
+    travelerHoodChar.fillStyle(0x22d3ee, 1);
+    travelerHoodChar.fillRect(24, 14, 16, 2);
+    travelerHoodChar.generateTexture('char-helmet-traveler_hood', 64, 64);
+
+    // 2. Chest Overlay: Worn Leather Armor (Stylized leather harness straps & belt wrapping the tapered torso)
+    const wornLeatherChar = this.make.graphics();
+    wornLeatherChar.fillStyle(0x000000, 1); // Outline for straps
+    wornLeatherChar.fillRect(21, 28, 7, 22); // Left strap outline
+    wornLeatherChar.fillRect(36, 28, 7, 22); // Right strap outline
+    wornLeatherChar.fillRect(19, 42, 26, 7);  // Waist belt outline
+
+    wornLeatherChar.fillStyle(0x5c240b, 1); // Dark brown leather straps
+    wornLeatherChar.fillRect(22, 28, 5, 22);
+    wornLeatherChar.fillRect(37, 28, 5, 22);
+    wornLeatherChar.fillRect(20, 43, 24, 5);  // Waist belt
+
+    wornLeatherChar.fillStyle(0xd97706, 1); // Bronze buckles/rivets at intersections
+    wornLeatherChar.fillRect(21, 42, 7, 7);
+    wornLeatherChar.fillRect(36, 42, 7, 7);
+    wornLeatherChar.fillStyle(0xf59e0b, 1);
+    wornLeatherChar.fillRect(23, 44, 3, 3);
+    wornLeatherChar.fillRect(38, 44, 3, 3);
+    wornLeatherChar.generateTexture('char-chest-worn_leather_armor', 64, 64);
+
+    // 3. Chest Overlay: Leather Armor (Clean tan leather harness straps & belt wrapping the tapered torso)
+    const leatherArmorChar = this.make.graphics();
+    leatherArmorChar.fillStyle(0x000000, 1); // Outline
+    leatherArmorChar.fillRect(21, 28, 7, 22);
+    leatherArmorChar.fillRect(36, 28, 7, 22);
+    leatherArmorChar.fillRect(19, 42, 26, 7);
+
+    leatherArmorChar.fillStyle(0x78350f, 1); // Tan leather straps
+    leatherArmorChar.fillRect(22, 28, 5, 22);
+    leatherArmorChar.fillRect(37, 28, 5, 22);
+    leatherArmorChar.fillRect(20, 43, 24, 5);
+
+    leatherArmorChar.fillStyle(0xf59e0b, 1); // Gold buckles
+    leatherArmorChar.fillRect(21, 42, 7, 7);
+    leatherArmorChar.fillRect(36, 42, 7, 7);
+    leatherArmorChar.generateTexture('char-chest-leather_armor', 64, 64);
+
+    // 4. Boots Overlay: Old Boots (Fitted onto the greaves at the bottom)
+    const oldBootsChar = this.make.graphics();
+    oldBootsChar.fillStyle(0x000000, 1); // Outline
+    oldBootsChar.fillRoundedRect(20, 54, 10, 8, 2);
+    oldBootsChar.fillRoundedRect(34, 54, 10, 8, 2);
+
+    oldBootsChar.fillStyle(0x2d1202, 1); // Dark brown boots wrapping the steel greaves
+    oldBootsChar.fillRoundedRect(21, 55, 8, 6, 1);
+    oldBootsChar.fillRoundedRect(35, 55, 8, 6, 1);
+
+    oldBootsChar.fillStyle(0x1c0a00, 1); // Sole base
+    oldBootsChar.fillRect(20, 60, 10, 2);
+    oldBootsChar.fillRect(34, 60, 10, 2);
+    oldBootsChar.generateTexture('char-boots-old_boots', 64, 64);
 
     console.log('BootScene: Textures generated. Launching MainMenuScene...');
     this.scene.start('MainMenuScene');
