@@ -162,7 +162,7 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
     const spacing = 10;
 
     const centerX = this.x;
-    const centerY = this.y;
+    const centerY = this.scene.scale.height / 2;
 
     const startX = -this.panelWidth / 2 + 24;
     const startY = -this.panelHeight / 2 + 75;
@@ -309,7 +309,7 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
       fontFamily: 'Cinzel', fontSize: '12px', color: '#e2e8f0', fontStyle: 'bold'
     });
     this.statsContainer.add(baseHeader);
-    yOffset += 20;
+    yOffset += 16;
 
     const baseStatsList = [
       { key: 'Health', baseVal: base.health, totalVal: total.health },
@@ -332,17 +332,17 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
 
       const valTxt = this.scene.add.text(100, yOffset, valStr, textStyleVal);
       this.statsContainer.add(valTxt);
-      yOffset += 16;
+      yOffset += 14;
     });
 
-    yOffset += 14;
+    yOffset += 10;
 
     // Header: Derived Stats
     const derivedHeader = this.scene.add.text(0, yOffset, 'DERIVED RATINGS', {
       fontFamily: 'Cinzel', fontSize: '12px', color: '#e2e8f0', fontStyle: 'bold'
     });
     this.statsContainer.add(derivedHeader);
-    yOffset += 20;
+    yOffset += 16;
 
     const derivedStatsList = [
       { key: 'Max Health', val: derived.maxHealth },
@@ -358,7 +358,7 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
 
       const valTxt = this.scene.add.text(100, yOffset, `${stat.val}`, textStyleVal);
       this.statsContainer.add(valTxt);
-      yOffset += 16;
+      yOffset += 14;
     });
   }
 
@@ -392,7 +392,7 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
 
         const w = 372;
         const absBtnX = this.x - this.panelWidth / 2 + 24 + (w - 110) + 47;
-        const absBtnY = this.y + (this.panelHeight / 2 - 135) + 36 + 15;
+        const absBtnY = (this.scene.scale.height / 2) + (this.panelHeight / 2 - 135) + 36 + 15;
 
         this.unequipBtnZone = this.scene.add.zone(absBtnX, absBtnY, 94, 30)
           .setInteractive({ useHandCursor: true })
@@ -498,8 +498,8 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
 
     if (isInventoryOpen) {
       // Shift side-by-side: Character Panel left, Inventory Panel right
-      this.setPosition(centerX - 200, centerY);
-      inventoryUI.setPosition(centerX + 230, centerY);
+      this.setPosition(centerX - 240, centerY);
+      inventoryUI.setPosition(centerX + 270, centerY);
     } else {
       // Center
       this.setPosition(centerX, centerY);

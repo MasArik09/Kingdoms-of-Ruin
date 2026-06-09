@@ -32,9 +32,15 @@ export class WorldScene extends Phaser.Scene {
   
   // UI Containers for dynamic anchoring
   private topLeftContainer!: Phaser.GameObjects.Container;
-  private backBtnContainer!: Phaser.GameObjects.Container;
+  private hudMenuContainer!: Phaser.GameObjects.Container;
+  private hudActionBarContainer!: Phaser.GameObjects.Container;
   private instructionsContainer!: Phaser.GameObjects.Container;
   private debugContainer!: Phaser.GameObjects.Container;
+
+  private inventoryBtnBg!: Phaser.GameObjects.Graphics;
+  private inventoryBtnIcon!: Phaser.GameObjects.Image;
+  private characterBtnBg!: Phaser.GameObjects.Graphics;
+  private characterBtnIcon!: Phaser.GameObjects.Image;
 
   // Text nodes
   private hudCoordinatesText!: Phaser.GameObjects.Text;
@@ -220,13 +226,13 @@ export class WorldScene extends Phaser.Scene {
     if (this.input.keyboard) {
       this.tabKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
       this.tabKey.on('down', () => {
-        this.inventoryUI.toggle(this.characterPanelUI);
+        this.toggleInventory();
       });
 
       // Register C key for character sheet toggle
       const cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
       cKey.on('down', () => {
-        this.characterPanelUI.toggle(this.inventoryUI);
+        this.toggleCharacterPanel();
       });
     }
 
@@ -397,7 +403,8 @@ export class WorldScene extends Phaser.Scene {
     const safePadding = 32;
     
     this.topLeftContainer.setPosition(safePadding, safePadding);
-    this.backBtnContainer.setPosition(safePadding, height - 40 - safePadding);
+    this.hudMenuContainer.setPosition(safePadding, height - 40 - safePadding);
+    this.hudActionBarContainer.setPosition(safePadding, safePadding + 100 + 12);
     this.instructionsContainer.setPosition(width - 300 - safePadding, height - 60 - safePadding);
     this.debugContainer.setPosition(width - 220 - safePadding, safePadding);
 
@@ -464,39 +471,139 @@ export class WorldScene extends Phaser.Scene {
     });
     this.instructionsContainer.add(instructionsText);
 
-    // Bottom-left Back Button container
-    this.backBtnContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
+    // Bottom-left Navigation Bar container
+    this.hudMenuContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
 
-    const backBtnBg = this.add.graphics();
-    backBtnBg.fillStyle(0x1e1b4b, 0.85);
-    backBtnBg.fillRoundedRect(0, 0, 140, 40, 6);
-    backBtnBg.lineStyle(1.5, 0x4f46e5, 0.7);
-    backBtnBg.strokeRoundedRect(0, 0, 140, 40, 6);
-    this.backBtnContainer.add(backBtnBg);
+    // Button 1: Main Menu
+    const menuBtnX = 0;
+    const menuBtnY = 0;
+    const menuBtnW = 140;
+    const menuBtnH = 40;
+    const menuBtnBg = this.add.graphics();
+    menuBtnBg.fillStyle(HUD_THEME.bgDefault, 0.85);
+    menuBtnBg.fillRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
+    menuBtnBg.lineStyle(1.5, HUD_THEME.borderDefault, 0.7);
+    menuBtnBg.strokeRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
+    this.hudMenuContainer.add(menuBtnBg);
 
-    const backBtnText = this.add.text(70, 20, 'MAIN MENU', {
+    const menuBtnText = this.add.text(menuBtnX + menuBtnW / 2, menuBtnY + menuBtnH / 2, 'MAIN MENU', {
       fontFamily: 'Montserrat',
       fontSize: '12px',
-      color: '#c084fc',
+      color: HUD_THEME.textMenuDefault,
       fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.backBtnContainer.add(backBtnText);
+    this.hudMenuContainer.add(menuBtnText);
 
-    backBtnText.setInteractive({ useHandCursor: true });
-    
-    backBtnText.on('pointerover', () => {
-      backBtnText.setStyle({ color: '#f59e0b' });
+    menuBtnText.setScrollFactor(0);
+    menuBtnText.setInteractive({ useHandCursor: true });
+    menuBtnText.on('pointerover', () => {
+      menuBtnText.setStyle({ color: HUD_THEME.textHover });
+      menuBtnBg.clear();
+      menuBtnBg.fillStyle(HUD_THEME.bgHover, 0.9);
+      menuBtnBg.fillRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
+      menuBtnBg.lineStyle(1.5, HUD_THEME.borderHover, 0.95);
+      menuBtnBg.strokeRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
     });
-    
-    backBtnText.on('pointerout', () => {
-      backBtnText.setStyle({ color: '#c084fc' });
+    menuBtnText.on('pointerout', () => {
+      menuBtnText.setStyle({ color: HUD_THEME.textMenuDefault });
+      menuBtnBg.clear();
+      menuBtnBg.fillStyle(HUD_THEME.bgDefault, 0.85);
+      menuBtnBg.fillRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
+      menuBtnBg.lineStyle(1.5, HUD_THEME.borderDefault, 0.7);
+      menuBtnBg.strokeRoundedRect(menuBtnX, menuBtnY, menuBtnW, menuBtnH, 6);
     });
-    
-    backBtnText.on('pointerdown', () => {
+    menuBtnText.on('pointerdown', () => {
       this.cameras.main.fade(600, 10, 6, 20);
       this.cameras.main.once('camerafadeoutcomplete', () => {
         this.scene.start('MainMenuScene');
       });
+    });
+
+    // Bottom-center Action Bar container
+    this.hudActionBarContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20000);
+
+    const barW = 56;
+    const barH = 112;
+    const barBg = this.add.graphics();
+    barBg.fillStyle(0x0f0c1b, 0.85);
+    barBg.fillRoundedRect(0, 0, barW, barH, 8);
+    barBg.lineStyle(1.5, 0x4f46e5, 0.6);
+    barBg.strokeRoundedRect(0, 0, barW, barH, 8);
+    this.hudActionBarContainer.add(barBg);
+
+    // Button 2: Inventory Icon Button
+    const invBtnX = 4;
+    const invBtnY = 4;
+    const btnSize = 48;
+
+    this.inventoryBtnBg = this.add.graphics();
+    this.drawIconButtonBorder(this.inventoryBtnBg, invBtnX, invBtnY, btnSize, false);
+    this.hudActionBarContainer.add(this.inventoryBtnBg);
+
+    this.inventoryBtnIcon = this.add.image(invBtnX + btnSize / 2, invBtnY + btnSize / 2, 'icon-inventory');
+    this.hudActionBarContainer.add(this.inventoryBtnIcon);
+
+    this.inventoryBtnIcon.setScrollFactor(0);
+    this.inventoryBtnIcon.setInteractive({ useHandCursor: true });
+    this.inventoryBtnIcon.on('pointerover', () => {
+      this.tweens.add({
+        targets: this.inventoryBtnIcon,
+        scale: 1.12,
+        duration: 100,
+        ease: 'Quad.easeOut'
+      });
+      if (!this.inventoryUI || !this.inventoryUI.getIsOpen()) {
+        this.drawIconButtonBorder(this.inventoryBtnBg, invBtnX, invBtnY, btnSize, false, true);
+      }
+    });
+    this.inventoryBtnIcon.on('pointerout', () => {
+      this.tweens.add({
+        targets: this.inventoryBtnIcon,
+        scale: 1.0,
+        duration: 100,
+        ease: 'Quad.easeOut'
+      });
+      this.updateMenuButtonsHighlight();
+    });
+    this.inventoryBtnIcon.on('pointerdown', () => {
+      this.toggleInventory();
+    });
+
+    // Button 3: Character Panel Icon Button
+    const charBtnX = 4;
+    const charBtnY = 60;
+
+    this.characterBtnBg = this.add.graphics();
+    this.drawIconButtonBorder(this.characterBtnBg, charBtnX, charBtnY, btnSize, false);
+    this.hudActionBarContainer.add(this.characterBtnBg);
+
+    this.characterBtnIcon = this.add.image(charBtnX + btnSize / 2, charBtnY + btnSize / 2, 'icon-character');
+    this.hudActionBarContainer.add(this.characterBtnIcon);
+
+    this.characterBtnIcon.setScrollFactor(0);
+    this.characterBtnIcon.setInteractive({ useHandCursor: true });
+    this.characterBtnIcon.on('pointerover', () => {
+      this.tweens.add({
+        targets: this.characterBtnIcon,
+        scale: 1.12,
+        duration: 100,
+        ease: 'Quad.easeOut'
+      });
+      if (!this.characterPanelUI || !this.characterPanelUI.getIsOpen()) {
+        this.drawIconButtonBorder(this.characterBtnBg, charBtnX, charBtnY, btnSize, false, true);
+      }
+    });
+    this.characterBtnIcon.on('pointerout', () => {
+      this.tweens.add({
+        targets: this.characterBtnIcon,
+        scale: 1.0,
+        duration: 100,
+        ease: 'Quad.easeOut'
+      });
+      this.updateMenuButtonsHighlight();
+    });
+    this.characterBtnIcon.on('pointerdown', () => {
+      this.toggleCharacterPanel();
     });
   }
 
@@ -544,6 +651,55 @@ export class WorldScene extends Phaser.Scene {
         this.hudBackendStatusText.setStyle({ color: '#f59e0b' });
       });
   }
+
+  private toggleInventory() {
+    this.inventoryUI.toggle(this.characterPanelUI);
+    this.updateMenuButtonsHighlight();
+  }
+
+  private toggleCharacterPanel() {
+    this.characterPanelUI.toggle(this.inventoryUI);
+    this.updateMenuButtonsHighlight();
+  }
+
+  private drawIconButtonBorder(
+    graphics: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    size: number,
+    isOpen: boolean,
+    isHover = false
+  ) {
+    graphics.clear();
+    if (isOpen) {
+      graphics.fillStyle(HUD_THEME.bgActive, 0.4);
+      graphics.fillRoundedRect(x, y, size, size, 6);
+      graphics.lineStyle(1.8, HUD_THEME.borderActive, 1.0);
+      graphics.strokeRoundedRect(x, y, size, size, 6);
+    } else if (isHover) {
+      graphics.fillStyle(HUD_THEME.bgHover, 0.3);
+      graphics.fillRoundedRect(x, y, size, size, 6);
+      graphics.lineStyle(1.5, HUD_THEME.borderHover, 0.95);
+      graphics.strokeRoundedRect(x, y, size, size, 6);
+    } else {
+      graphics.fillStyle(0x0f0c1b, 0.3);
+      graphics.fillRoundedRect(x, y, size, size, 6);
+      graphics.lineStyle(1.5, HUD_THEME.borderDefault, 0.5);
+      graphics.strokeRoundedRect(x, y, size, size, 6);
+    }
+  }
+
+  private updateMenuButtonsHighlight() {
+    const isInventoryOpen = this.inventoryUI && this.inventoryUI.getIsOpen();
+    const isCharacterOpen = this.characterPanelUI && this.characterPanelUI.getIsOpen();
+
+    if (this.inventoryBtnBg) {
+      this.drawIconButtonBorder(this.inventoryBtnBg, 4, 4, 48, isInventoryOpen);
+    }
+    if (this.characterBtnBg) {
+      this.drawIconButtonBorder(this.characterBtnBg, 4, 60, 48, isCharacterOpen);
+    }
+  }
 }
 
 function onDebugStyleText(color: string) {
@@ -554,3 +710,18 @@ function onDebugStyleText(color: string) {
     fontStyle: 'bold',
   };
 }
+
+const HUD_THEME = {
+  bgDefault: 0x1e1b4b,
+  bgHover: 0x2e1065,
+  bgActive: 0xd97706,
+  
+  borderDefault: 0x4f46e5,
+  borderHover: 0xd97706,
+  borderActive: 0xf59e0b,
+
+  textMenuDefault: '#c084fc',
+  textBtnDefault: '#cbd5e1',
+  textActive: '#0f0c1b',
+  textHover: '#f59e0b'
+};

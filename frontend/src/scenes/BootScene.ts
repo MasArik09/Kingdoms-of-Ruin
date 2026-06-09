@@ -97,31 +97,62 @@ export class BootScene extends Phaser.Scene {
     shadowGraphics.fillEllipse(32, 32, 18, 9);
     shadowGraphics.generateTexture('shadow', 64, 64);
 
-    // 4. Polished Tree (64x64)
+    // 4. Polished Tree (64x64) - Stylized Chiseled Pine/Spruce Tree
     const treeGraphics = this.make.graphics();
-    // Trunk with bark textures
-    treeGraphics.fillStyle(0x3c1d11, 1);
-    treeGraphics.fillRect(28, 36, 8, 28);
-    treeGraphics.fillStyle(0x200d07, 1);
-    treeGraphics.fillRect(30, 36, 1.5, 28);
-    treeGraphics.fillRect(34, 42, 1.5, 22);
 
-    // Layered foliage
-    treeGraphics.fillStyle(0x064e3b, 1);
-    treeGraphics.fillCircle(32, 25, 21);
-    treeGraphics.fillCircle(20, 23, 13);
-    treeGraphics.fillCircle(44, 23, 13);
-    treeGraphics.fillStyle(0x047857, 1);
-    treeGraphics.fillCircle(32, 21, 19);
-    treeGraphics.fillCircle(22, 19, 11);
-    treeGraphics.fillCircle(42, 19, 11);
-    treeGraphics.fillStyle(0x10b981, 1);
-    treeGraphics.fillCircle(30, 16, 14);
-    treeGraphics.fillCircle(24, 15, 8);
-    treeGraphics.fillCircle(36, 15, 8);
-    treeGraphics.fillStyle(0x34d399, 0.85);
-    treeGraphics.fillCircle(28, 12, 6);
-    treeGraphics.fillCircle(32, 10, 5);
+    const drawTreePoly = (points: number[], color: number) => {
+      treeGraphics.fillStyle(color, 1);
+      treeGraphics.beginPath();
+      treeGraphics.moveTo(points[0], points[1]);
+      for (let i = 2; i < points.length; i += 2) {
+        treeGraphics.lineTo(points[i], points[i+1]);
+      }
+      treeGraphics.closePath();
+      treeGraphics.fillPath();
+    };
+
+    // 4.1 Root Shadow
+    treeGraphics.fillStyle(0x190e0a, 0.4);
+    treeGraphics.fillEllipse(32, 62, 16, 4);
+
+    // 4.2 Trunk (Simple vertical tapered shape)
+    drawTreePoly([28, 64, 30, 42, 34, 42, 36, 64], 0x2d1910); // Main trunk
+    drawTreePoly([32, 64, 34, 42, 36, 64], 0x190e0a); // Trunk shadow right side
+    drawTreePoly([28, 64, 30, 42, 32, 64], 0x5c3c2e); // Trunk highlight left side
+
+    // 4.3 Pine Foliage Layers (3 overlapping triangular layers, split-shaded)
+    const colLight = 0x059669;  // Mid-light emerald green
+    const colDark = 0x047857;   // Mid-dark forest green
+    const colHigh = 0x34d399;   // Bright mint green for left edge highlight
+    const colShadow = 0x022c22; // Deep dark shadow for bottom edge
+
+    // Layer 1 (Bottom, largest)
+    drawTreePoly([32, 34, 10, 52, 32, 46], colLight); // Left half
+    drawTreePoly([32, 34, 32, 46, 54, 52], colDark);  // Right half
+    treeGraphics.lineStyle(1.5, colHigh, 0.85);
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(10, 52, 32, 34)); // Left edge highlight
+    treeGraphics.lineStyle(1.5, colShadow, 0.9);
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(10, 52, 32, 46)); // Bottom-left shadow
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(54, 52, 32, 46)); // Bottom-right shadow
+
+    // Layer 2 (Middle)
+    drawTreePoly([32, 22, 14, 38, 32, 32], colLight); // Left half
+    drawTreePoly([32, 22, 32, 32, 50, 38], colDark);  // Right half
+    treeGraphics.lineStyle(1.5, colHigh, 0.85);
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(14, 38, 32, 22)); // Left edge highlight
+    treeGraphics.lineStyle(1.5, colShadow, 0.9);
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(14, 38, 32, 32)); // Bottom-left shadow
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(50, 38, 32, 32)); // Bottom-right shadow
+
+    // Layer 3 (Top, smallest)
+    drawTreePoly([32, 8, 18, 24, 32, 18], colLight); // Left half
+    drawTreePoly([32, 8, 32, 18, 46, 24], colDark);  // Right half
+    treeGraphics.lineStyle(1.5, colHigh, 0.85);
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(18, 24, 32, 8));  // Left edge highlight
+    treeGraphics.lineStyle(1.5, colShadow, 0.9);
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(18, 24, 32, 18)); // Bottom-left shadow
+    treeGraphics.strokeLineShape(new Phaser.Geom.Line(46, 24, 32, 18)); // Bottom-right shadow
+
     treeGraphics.generateTexture('tree', 64, 64);
 
     // 5. Polished Rock with Chiseled Facets (64x64) - CoC-style faceted boulder
@@ -808,6 +839,45 @@ export class BootScene extends Phaser.Scene {
     leatherArmor.fillCircle(20, 24, 2);
     leatherArmor.fillCircle(44, 24, 2);
     leatherArmor.generateTexture('item-leather-armor', 64, 64);
+
+    // 30. Backpack Icon (48x48)
+    const invIconGraphics = this.make.graphics();
+    invIconGraphics.fillStyle(0x0a0705, 1); // Solid outline
+    invIconGraphics.fillRoundedRect(6, 6, 36, 36, 6);
+    invIconGraphics.fillStyle(0x78350f, 1); // Main bag body
+    invIconGraphics.fillRoundedRect(8, 10, 32, 30, 4);
+    invIconGraphics.fillStyle(0x451a03, 1); // Top flap
+    invIconGraphics.fillRoundedRect(10, 8, 28, 16, 4);
+    invIconGraphics.fillStyle(0x1e1b4b, 1); // Straps
+    invIconGraphics.fillRect(16, 14, 4, 24);
+    invIconGraphics.fillRect(28, 14, 4, 24);
+    invIconGraphics.fillStyle(0xd97706, 1); // Buckles
+    invIconGraphics.fillRect(15, 26, 6, 5);
+    invIconGraphics.fillRect(27, 26, 6, 5);
+    invIconGraphics.fillStyle(0xf59e0b, 1);
+    invIconGraphics.fillRect(16, 27, 4, 3);
+    invIconGraphics.generateTexture('icon-inventory', 48, 48);
+
+    // 31. Character Profile Icon (48x48)
+    const charIconGraphics = this.make.graphics();
+    charIconGraphics.fillStyle(0x000000, 1); // Outline
+    charIconGraphics.fillCircle(24, 26, 15);
+    charIconGraphics.fillRect(20, 4, 8, 10);
+    charIconGraphics.fillStyle(0xb91c1c, 1); // Plume
+    charIconGraphics.fillRect(21, 5, 6, 10);
+    charIconGraphics.fillStyle(0xef4444, 1);
+    charIconGraphics.fillRect(23, 5, 2, 8);
+    charIconGraphics.fillStyle(0x475569, 1); // Helmet
+    charIconGraphics.fillCircle(24, 26, 12);
+    charIconGraphics.fillStyle(0x64748b, 1);
+    charIconGraphics.fillCircle(24, 26, 10);
+    charIconGraphics.fillStyle(0x94a3b8, 1); // Shine
+    charIconGraphics.fillCircle(22, 24, 5);
+    charIconGraphics.fillStyle(0x0f172a, 1); // Visor Slit
+    charIconGraphics.fillRoundedRect(14, 22, 20, 8, 3);
+    charIconGraphics.fillStyle(0x22d3ee, 1); // Glowing energy
+    charIconGraphics.fillRect(16, 25, 16, 2);
+    charIconGraphics.generateTexture('icon-character', 48, 48);
 
     console.log('BootScene: Textures generated. Launching MainMenuScene...');
     this.scene.start('MainMenuScene');

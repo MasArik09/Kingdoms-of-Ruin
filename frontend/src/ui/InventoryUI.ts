@@ -206,7 +206,7 @@ export class InventoryUI extends Phaser.GameObjects.Container {
     const startX = -this.panelWidth / 2 + 24;
     const startY = -this.panelHeight / 2 + 58;
 
-    const centerX = this.scene.scale.width / 2;
+    const centerX = this.x;
     const centerY = this.scene.scale.height / 2;
 
     categories.forEach((cat, idx) => {
@@ -314,7 +314,7 @@ export class InventoryUI extends Phaser.GameObjects.Container {
     const gridStartX = -this.panelWidth / 2 + 24;
     const gridStartY = -this.panelHeight / 2 + 90;
 
-    const centerX = this.scene.scale.width / 2;
+    const centerX = this.x;
     const centerY = this.scene.scale.height / 2;
 
     for (let i = 0; i < totalSlots; i++) {
@@ -462,7 +462,7 @@ export class InventoryUI extends Phaser.GameObjects.Container {
       const w = 160;
       const h = 286;
       const absBtnX = this.x + (this.panelWidth / 2 - 180) + w / 2;
-      const absBtnY = this.y - this.panelHeight / 2 + 90 + (h - 36);
+      const absBtnY = (this.scene.scale.height / 2) - this.panelHeight / 2 + 90 + (h - 36);
 
       this.equipBtnZone = this.scene.add.zone(absBtnX, absBtnY, 100, 30)
         .setInteractive({ useHandCursor: true })
