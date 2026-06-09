@@ -7,6 +7,7 @@ export class PaperDoll {
   private scene: Phaser.Scene;
   private player: Phaser.Physics.Arcade.Sprite;
   private sprites: Record<string, Phaser.GameObjects.Image> = {};
+  private isSwinging = false;
   private unsubscribe?: () => void;
 
   constructor(scene: Phaser.Scene, player: Phaser.Physics.Arcade.Sprite) {
@@ -92,14 +93,53 @@ export class PaperDoll {
       sprite.setDepth(this.player.depth + depthOffset);
 
       if (slot === 'weapon') {
-        const offsetX = (isFlipped ? -18 : 18) * this.player.scaleX;
-        const offsetY = 14 * this.player.scaleY;
-        sprite.setPosition(this.player.x + offsetX, this.player.y + offsetY);
-        sprite.setRotation(isFlipped ? -0.6 : 0.6);
+        if (!this.isSwinging) {
+          const offsetX = (isFlipped ? -18 : 18) * this.player.scaleX;
+          const offsetY = 14 * this.player.scaleY;
+          sprite.setPosition(this.player.x + offsetX, this.player.y + offsetY);
+          sprite.setRotation(isFlipped ? -0.6 : 0.6);
+        }
       } else {
         sprite.setPosition(this.player.x, this.player.y);
         sprite.setRotation(0);
         sprite.setFlipX(isFlipped);
+      }
+    });
+  }
+
+  /**
+   * Swing the weapon toward a specific angle (radians from player to cursor).
+   * @param angle - The angle in radians from the player toward the cursor/target.
+   */
+  public swingWeapon(angle: number) {
+    const weapon = this.sprites['weapon'];
+    if (!weapon || !weapon.active || this.isSwinging) return;
+
+    this.isSwinging = true;
+
+    // Position weapon in the direction of the swing (close to the player body)
+    const swingDistance = 20;
+    const weaponX = this.player.x + Math.cos(angle) * swingDistance;
+    const weaponY = this.player.y + Math.sin(angle) * swingDistance;
+    weapon.setPosition(weaponX, weaponY);
+
+    // Rotate weapon to point outward in the attack direction
+    // Add PI/4 so the blade graphic points along the swing arc
+    const baseRotation = angle + Math.PI / 4;
+    weapon.setRotation(baseRotation);
+
+    // Swing arc: rotate ±0.8 radians around the base angle
+    this.scene.tweens.add({
+      targets: weapon,
+      rotation: baseRotation + 0.8,
+      duration: 100,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+      onStart: () => {
+        weapon.setRotation(baseRotation - 0.8);
+      },
+      onComplete: () => {
+        this.isSwinging = false;
       }
     });
   }

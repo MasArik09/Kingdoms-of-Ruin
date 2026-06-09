@@ -1031,6 +1031,111 @@ export class BootScene extends Phaser.Scene {
     oldBootsChar.fillRect(34, 60, 10, 2);
     oldBootsChar.generateTexture('char-boots-old_boots', 64, 64);
 
+    // 38. Enemy: Slime (64x64 menacing toxic slime monster)
+    const slimeGraphics = this.make.graphics();
+
+    // Toxic drip puddle underneath
+    slimeGraphics.fillStyle(0x1a3a0a, 0.5);
+    slimeGraphics.fillEllipse(32, 54, 26, 6);
+
+    // Dripping acid tendrils hanging from body
+    slimeGraphics.fillStyle(0x2d6b12, 0.8);
+    slimeGraphics.fillRect(20, 46, 3, 10);
+    slimeGraphics.fillRect(30, 48, 2, 8);
+    slimeGraphics.fillRect(40, 46, 3, 9);
+
+    // Black outline (thicker for menacing look)
+    slimeGraphics.fillStyle(0x0a0a0a, 1);
+    slimeGraphics.fillEllipse(32, 40, 24, 18);
+
+    // Dark base shadow layer
+    slimeGraphics.fillStyle(0x1a3a0a, 1);
+    slimeGraphics.fillEllipse(32, 41, 22, 16);
+
+    // Main toxic green body
+    slimeGraphics.fillStyle(0x2d6b12, 1);
+    slimeGraphics.fillEllipse(32, 39, 21, 15);
+
+    // Sickly highlight streaks (uneven, organic feel)
+    slimeGraphics.fillStyle(0x4a8c1f, 0.6);
+    slimeGraphics.fillEllipse(26, 33, 7, 4);
+    slimeGraphics.fillEllipse(38, 36, 5, 3);
+
+    // Toxic bubble spots
+    slimeGraphics.fillStyle(0x6abf2a, 0.5);
+    slimeGraphics.fillCircle(22, 38, 2);
+    slimeGraphics.fillCircle(42, 35, 1.5);
+    slimeGraphics.fillCircle(36, 44, 1.5);
+
+    // Angry slanted eyes (white sclera angled inward)
+    slimeGraphics.fillStyle(0xcccc00, 1); // Sickly yellow sclera
+    // Left eye — slanted angry
+    slimeGraphics.beginPath();
+    slimeGraphics.moveTo(20, 36);
+    slimeGraphics.lineTo(29, 34);
+    slimeGraphics.lineTo(29, 40);
+    slimeGraphics.lineTo(20, 40);
+    slimeGraphics.closePath();
+    slimeGraphics.fillPath();
+    // Right eye — slanted angry (mirrored)
+    slimeGraphics.beginPath();
+    slimeGraphics.moveTo(44, 36);
+    slimeGraphics.lineTo(35, 34);
+    slimeGraphics.lineTo(35, 40);
+    slimeGraphics.lineTo(44, 40);
+    slimeGraphics.closePath();
+    slimeGraphics.fillPath();
+
+    // Red glowing pupils
+    slimeGraphics.fillStyle(0xcc0000, 1);
+    slimeGraphics.fillCircle(25, 38, 2.5);
+    slimeGraphics.fillCircle(39, 38, 2.5);
+    // Pupil core (darker)
+    slimeGraphics.fillStyle(0x440000, 1);
+    slimeGraphics.fillCircle(25, 38, 1);
+    slimeGraphics.fillCircle(39, 38, 1);
+
+    // Jagged mouth with fangs
+    slimeGraphics.fillStyle(0x0a0a0a, 1);
+    slimeGraphics.beginPath();
+    slimeGraphics.moveTo(24, 44);
+    slimeGraphics.lineTo(27, 42);
+    slimeGraphics.lineTo(30, 45);
+    slimeGraphics.lineTo(32, 42);
+    slimeGraphics.lineTo(34, 45);
+    slimeGraphics.lineTo(37, 42);
+    slimeGraphics.lineTo(40, 44);
+    slimeGraphics.lineTo(40, 47);
+    slimeGraphics.lineTo(24, 47);
+    slimeGraphics.closePath();
+    slimeGraphics.fillPath();
+    // Fangs (sharp white teeth)
+    slimeGraphics.fillStyle(0xdddddd, 1);
+    slimeGraphics.fillRect(26, 44, 2, 3);
+    slimeGraphics.fillRect(36, 44, 2, 3);
+    slimeGraphics.fillStyle(0xbbbbbb, 1);
+    slimeGraphics.fillRect(31, 43, 2, 2);
+
+    slimeGraphics.generateTexture('enemy-slime', 64, 64);
+
+    // 39. Effect: Sword Slash (64x64 semi-transparent white-cyan crescent)
+    const slashGraphics = this.make.graphics();
+    slashGraphics.fillStyle(0xffffff, 0.8);
+    // Draw crescent
+    slashGraphics.beginPath();
+    slashGraphics.arc(32, 32, 24, -Math.PI / 3, Math.PI / 3, false); // Outer arc
+    slashGraphics.arc(36, 32, 20, Math.PI / 3, -Math.PI / 3, true);  // Inner arc offset slightly
+    slashGraphics.closePath();
+    slashGraphics.fillPath();
+    // Inner cyan energy line
+    slashGraphics.fillStyle(0x22d3ee, 0.9);
+    slashGraphics.beginPath();
+    slashGraphics.arc(32, 32, 22, -Math.PI / 4, Math.PI / 4, false);
+    slashGraphics.arc(35, 32, 20, Math.PI / 4, -Math.PI / 4, true);
+    slashGraphics.closePath();
+    slashGraphics.fillPath();
+    slashGraphics.generateTexture('sword-slash', 64, 64);
+
     console.log('BootScene: Textures generated. Launching MainMenuScene...');
     this.scene.start('MainMenuScene');
   }

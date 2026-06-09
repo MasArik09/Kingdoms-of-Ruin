@@ -22,6 +22,10 @@ export interface DerivedStats {
 interface CharacterState {
   baseStats: BaseStats;
   equipment: Record<EquipmentSlot, string | null>;
+  level: number;
+  experience: number;
+  currentHp: number;
+  currentStamina: number;
   isLoading: boolean;
   error: string | null;
 
@@ -30,6 +34,10 @@ interface CharacterState {
   unequipItem: (slot: EquipmentSlot, ownerType?: string, ownerId?: string) => Promise<boolean>;
   getTotalStats: () => BaseStats;
   getDerivedStats: () => DerivedStats;
+  fetchProgress: (ownerId?: string) => Promise<void>;
+  updateProgress: (level: number, experience: number, ownerId?: string) => Promise<boolean>;
+  setHp: (hp: number) => void;
+  setStamina: (stamina: number) => void;
 }
 
 export const useCharacterStore = create<CharacterState>((set, get) => ({
@@ -50,6 +58,10 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   },
   isLoading: false,
   error: null,
+  level: 1,
+  experience: 0,
+  currentHp: 100,
+  currentStamina: 100,
 
   fetchEquipment: async (ownerType = 'player', ownerId = 'player_default') => {
     set({ isLoading: true, error: null });
@@ -186,5 +198,63 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       armorRating: total.defense * 3 + armorBonus,
       moveSpeed: 250 + total.agility * 1.5,
     };
+  },
+
+  fetchProgress: async (ownerId = 'player_default') => {
+    try {
+      const response = await fetch(`/api/character/progress?owner_id=${ownerId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch progress: ${response.statusText}`);
+      }
+      const data = await response.json();
+      set({
+        level: data.level,
+        experience: data.experience,
+      });
+      // Set current HP and stamina to max values calculated on startup
+      const derived = get().getDerivedStats();
+      set({
+        currentHp: derived.maxHealth,
+        currentStamina: derived.maxStamina,
+      });
+    } catch (err: any) {
+      console.error('Failed to fetch character progress:', err);
+    }
+  },
+
+  updateProgress: async (level: number, experience: number, ownerId = 'player_default') => {
+    try {
+      const response = await fetch('/api/character/progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          owner_id: ownerId,
+          level: level,
+          experience: experience,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to update progress: ${response.statusText}`);
+      }
+      set({ level, experience });
+      return true;
+    } catch (err: any) {
+      console.error('Failed to update character progress:', err);
+      return false;
+    }
+  },
+
+  setHp: (hp: number) => {
+    const derived = get().getDerivedStats();
+    const boundedHp = Math.max(0, Math.min(derived.maxHealth, hp));
+    set({ currentHp: boundedHp });
+  },
+
+  setStamina: (stamina: number) => {
+    const derived = get().getDerivedStats();
+    const boundedStamina = Math.max(0, Math.min(derived.maxStamina, stamina));
+    set({ currentStamina: boundedStamina });
   },
 }));

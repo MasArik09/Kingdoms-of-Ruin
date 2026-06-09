@@ -98,64 +98,46 @@ Status Legend:
 
 ---
 
-# Phase 2 — Inventory System
+# Phase 2 — Equipment, Progression, & Visual Customization
 
-## Inventory Core
+## Database & Persistence
+- [x] Create characters and character_equipment tables
+- [x] Implement Fiber GET/POST endpoints for equipment
+- [x] Use SQL transactions to safely equip/unequip gear
 
-- [ ] Inventory model
-- [ ] Inventory UI
-- [ ] Inventory slots
+## Stat Progression
+- [x] implement Zustand character store
+- [x] Calculate derived stats (Max HP, Max Stamina, Attack Power, Armor, Speed)
 
-## Item System
+## Visual Customization
+- [x] Redesign player base knight sprite to be heroic/athletic
+- [x] Create custom vector overlay sprites for Traveler Hood, Worn Leather Armor, and Old Boots
+- [x] Implement PaperDoll rendering manager for depth, scale, and movement alignment
+- [x] Hook into Phaser's postupdate event loop to eliminate overlay frame lag
 
-- [ ] Item definitions
-- [ ] Item rarity
-- [ ] Item metadata
-
-## Item Interaction
-
-- [ ] Pickup item
-- [ ] Drop item
-- [ ] Stack item
-- [ ] Split stack
-
----
-
-# Phase 3 — Equipment System
-
-## Equipment
-
-- [ ] Weapon slots
-- [ ] Armor slots
-- [ ] Accessory slots
-
-## Stat Calculation
-
-- [ ] Attack calculation
-- [ ] Defense calculation
-- [ ] Derived stats
+## UI Isolation & Layout
+- [x] Extract HUD overlay manager class
+- [x] Add responsive side-by-side positioning for Character Sheet and Inventory panels
+- [x] Optimize stats layout spacing to prevent vertical overlapping
 
 ---
 
-# Phase 4 — Combat System
+# Phase 3 — Combat & Enemy Foundations
 
-## Combat Core
+## Enemy Foundation
+- [ ] Create abstract `EnemyBase` class in Phaser
+- [ ] Implement `Slime` enemy subclass with custom behavior and textures
+- [ ] Create `EnemyRegistry` to manage enemy types and stats
 
-- [ ] Damage system
-- [ ] Health system
-- [ ] Death system
+## Combat & Damage Systems
+- [ ] Create `CombatSystem` for handling melee attacks, triggers, and hits
+- [ ] Create `DamageSystem` for calculating final damage and applying HP changes
+- [ ] Implement floating damage text on hit
 
-## Enemy
-
-- [ ] Enemy entity
-- [ ] Enemy AI
-- [ ] Enemy pathfinding
-
-## Weapons
-
-- [ ] Sword attack
-- [ ] Bow attack
-- [ ] Magic attack
+## Progression & Persistence
+- [ ] Update PostgreSQL characters table to track level and experience
+- [ ] Implement `ExperienceSystem` to handle XP rewards, leveling up, and DB sync
+- [ ] Implement CharacterCombatStats layer to consolidate combat values
 
 ---
 

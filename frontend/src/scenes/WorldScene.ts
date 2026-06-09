@@ -13,6 +13,11 @@ import { CharacterPanelUI } from '../ui/CharacterPanelUI';
 import { useCharacterStore } from '../stores/characterStore';
 import { PaperDoll } from '../ui/PaperDoll';
 import { HUDManager } from '../ui/HUDManager';
+import { Slime } from '../entities/Slime';
+import { EnemyBase } from '../entities/EnemyBase';
+import { CombatSystem } from '../systems/CombatSystem';
+import { DamageSystem } from '../systems/DamageSystem';
+import { ExperienceSystem } from '../systems/ExperienceSystem';
 
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
@@ -26,6 +31,8 @@ export class WorldScene extends Phaser.Scene {
   // Refactored modular sub-systems
   private hudManager!: HUDManager;
   private paperDoll!: PaperDoll;
+  private enemies!: Phaser.Physics.Arcade.Group;
+  private combatSystem!: CombatSystem;
 
   private tabKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -59,6 +66,7 @@ export class WorldScene extends Phaser.Scene {
       await Promise.all([
         useInventoryStore.getState().fetchInventory(),
         useCharacterStore.getState().fetchEquipment(),
+        useCharacterStore.getState().fetchProgress(),
         useWorldStateStore.getState().fetchStates()
       ]);
     } catch (err) {
@@ -214,6 +222,39 @@ export class WorldScene extends Phaser.Scene {
     this.inventoryUI = new InventoryUI(this);
     this.characterPanelUI = new CharacterPanelUI(this);
 
+    // Initialize Combat & Progression Systems
+    this.enemies = this.physics.add.group({ runChildUpdate: true });
+    this.combatSystem = new CombatSystem(this, this.player, this.enemies, this.paperDoll);
+    new ExperienceSystem(this, this.player);
+
+    // Spawn Slime groups
+    const slimeSpawns = [
+      { x: 800, y: 780 },
+      { x: 1200, y: 820 },
+      { x: 720, y: 1100 },
+      { x: 1280, y: 1140 },
+    ];
+    slimeSpawns.forEach((spawn, idx) => {
+      const slime = new Slime(this, spawn.x, spawn.y, `slime_${idx}_${Date.now()}`, this.player);
+      this.enemies.add(slime);
+    });
+
+    // Set collisions and overlaps for slimes
+    this.physics.add.collider(this.enemies, obstacles);
+    this.physics.add.collider(this.enemies, shrine);
+    this.physics.add.collider(this.enemies, chest);
+    this.physics.add.overlap(this.player, this.enemies, (player, enemy) => {
+      DamageSystem.applyDamageToPlayer(this, player as Phaser.Physics.Arcade.Sprite, enemy as EnemyBase);
+    }, undefined, this);
+
+    this.events.on('player:death', () => {
+      this.toastManager.showToast('You fell in battle! Respawning beside the campfire...', false);
+      const derived = useCharacterStore.getState().getDerivedStats();
+      useCharacterStore.getState().setHp(derived.maxHealth);
+      useCharacterStore.getState().setStamina(derived.maxStamina);
+      this.player.setPosition(1000, 980);
+    });
+
     // Register Tab key for inventory toggle
     if (this.input.keyboard) {
       this.tabKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
@@ -311,13 +352,22 @@ export class WorldScene extends Phaser.Scene {
   update() {
     if (!this.player) return;
 
+    // Update systems
+    if (this.combatSystem) {
+      this.combatSystem.update();
+    }
+
+    // Update player floating health bar (fade in/out logic)
+    DamageSystem.updatePlayerHealthBar(this, this.player);
+
     // Update interactions
     if (this.interactionManager) {
       this.interactionManager.update();
     }
 
     // Movement speeds
-    const speed = 250;
+    const derivedStats = useCharacterStore.getState().getDerivedStats();
+    const speed = derivedStats.moveSpeed;
     let vx = 0;
     let vy = 0;
 

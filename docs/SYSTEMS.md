@@ -90,3 +90,16 @@ Introduces character profile stats, slot mappings, and dynamic stat calculations
 - **`InventoryUI`**: Renders rarity color borders around slots (Common, Uncommon, etc.). Selecting an equipable item reveals its stats and shows an "EQUIP" button in the detail card.
 - **Dynamic Positioning (`adjustLayout`)**: When both panels are opened, the UI shifts them side-by-side (Character Sheet left, Inventory right) to prevent overlap. Closing either panel centers the remaining open panel.
 
+---
+
+## 6. UI & Rendering Architecture
+The frontend decouples heavy UI management and sprite decoration from the active game scenes.
+
+### Component Isolation:
+- **`HUDManager.ts`**: Handles creation, layout updates, resize events, and interactions of HUD elements (player profile, action buttons, instructions, dev overlays) in one localized class.
+- **`PaperDoll.ts`**: Encapsulates active equipment sprite instantiation, Zustand store subscription tracking, horizontal flipping, scale inheritance, and depth ordering.
+
+### Post-Update Render Synchronization:
+- To eliminate the movement latency or frame lag where overlay equipment trails behind the player sprite, the player's shadow position and all active `PaperDoll` graphics are updated inside Phaser's `'postupdate'` event loop.
+- By hook-binding to `postupdate`, all positioning adjustments occur immediately after the Arcade Physics simulation resolves player velocity and coordinates, but before the WebGL/Canvas renderer draws the active frame. This guarantees pixel-perfect movement alignment.
+

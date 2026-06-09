@@ -56,6 +56,10 @@ func main() {
 	eqRepo := equipment.NewRepository(db.Pool)
 	eqHandler := equipment.NewHandler(eqRepo)
 
+	// Setup Character Progression
+	charRepo := character.NewRepository(db.Pool)
+	charHandler := character.NewHandler(charRepo)
+
 	// 4. Register middlewares
 	app.Use(recover.New())
 	app.Use(cors.New(cors.Config{
@@ -100,6 +104,10 @@ func main() {
 	app.Get("/api/equipment", eqHandler.GetEquipment)
 	app.Post("/api/equipment/equip", eqHandler.EquipItem)
 	app.Post("/api/equipment/unequip", eqHandler.UnequipItem)
+
+	// Register Character Progression Endpoints
+	app.Get("/api/character/progress", charHandler.GetProgress)
+	app.Post("/api/character/progress", charHandler.UpdateProgress)
 
 	// 6. Start server listening
 	log.Printf("Server listening on port %s", cfg.ServerPort)
