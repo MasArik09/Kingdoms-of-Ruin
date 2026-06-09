@@ -833,7 +833,7 @@ export class BootScene extends Phaser.Scene {
 
     // 26. Item: Traveler Hood (64x64)
     const travelerHood = this.make.graphics();
-    travelerHood.fillStyle(0x312e81, 1); // Dark indigo hood
+    travelerHood.fillStyle(0x5c240b, 1); // Dark brown hood (aligned with leather equipment set)
     travelerHood.beginPath();
     travelerHood.moveTo(32, 12);
     travelerHood.lineTo(16, 30);
@@ -844,7 +844,7 @@ export class BootScene extends Phaser.Scene {
     travelerHood.fillPath();
     travelerHood.fillStyle(0x0f0c1b, 1); // Face shadow opening
     travelerHood.fillEllipse(32, 34, 12, 16);
-    travelerHood.lineStyle(1.5, 0x4f46e5, 0.8); // Folds
+    travelerHood.lineStyle(1.5, 0x92400e, 0.8); // Folds
     travelerHood.beginPath();
     travelerHood.moveTo(32, 12);
     travelerHood.lineTo(24, 28);
@@ -952,7 +952,7 @@ export class BootScene extends Phaser.Scene {
     // CHARACTER-FIT OVERLAY GRAPHICS (64x64)
     // ==========================================
 
-    // 1. Helmet Overlay: Traveler Hood (Indigo cowl framing the head at y = 15, covering the plume and showing glowing eyes in shadow)
+    // 1. Helmet Overlay: Traveler Hood (Brown cowl framing the head at y = 15, covering the plume and showing glowing eyes in shadow)
     const travelerHoodChar = this.make.graphics();
     
     // Outline (Silhouettes)
@@ -961,12 +961,12 @@ export class BootScene extends Phaser.Scene {
     travelerHoodChar.fillRoundedRect(17, 19, 30, 12, 4); // Soft shoulder drape outline
 
     // Hood fabric base
-    travelerHoodChar.fillStyle(0x312e81, 1); // Dark indigo hood base
+    travelerHoodChar.fillStyle(0x5c240b, 1); // Dark brown hood base (aligned with leather equipment set)
     travelerHoodChar.fillCircle(32, 15, 13); // Rounded top head
     travelerHoodChar.fillRoundedRect(19, 20, 26, 10, 3); // Soft shoulder drape
 
     // Folds & Highlights
-    travelerHoodChar.fillStyle(0x4338ca, 1); // Lighter folds
+    travelerHoodChar.fillStyle(0x92400e, 1); // Warm brown folds
     travelerHoodChar.fillRect(19, 21, 3, 8);
     travelerHoodChar.fillRect(42, 21, 3, 8);
 
