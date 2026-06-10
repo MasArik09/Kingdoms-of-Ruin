@@ -22,7 +22,7 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
   private unequipBtnContainer!: Phaser.GameObjects.Container;
 
   private panelWidth = 420;
-  private panelHeight = 400;
+  private panelHeight = 480;
 
   constructor(scene: Phaser.Scene) {
     const { width, height } = scene.scale;
@@ -298,11 +298,71 @@ export class CharacterPanelUI extends Phaser.GameObjects.Container {
     const base = store.baseStats;
     const total = store.getTotalStats();
     const derived = store.getDerivedStats();
+    const level = store.level;
+    const experience = store.experience;
+    const xpNeeded = 100 * level; // Matches ExperienceSystem.getXpNeeded
+    const xpPercent = Math.min(1, experience / xpNeeded);
 
     const textStyleName = { fontFamily: 'Montserrat', fontSize: '10px', color: '#94a3b8', fontStyle: 'bold' };
     const textStyleVal = { fontFamily: 'Montserrat', fontSize: '11px', color: '#f59e0b', fontStyle: 'bold' };
 
     let yOffset = 0;
+
+    // === Level & XP Section ===
+    const levelLabel = this.scene.add.text(0, yOffset, 'LEVEL', {
+      fontFamily: 'Cinzel', fontSize: '12px', color: '#e2e8f0', fontStyle: 'bold'
+    });
+    this.statsContainer.add(levelLabel);
+
+    const levelVal = this.scene.add.text(100, yOffset, `${level}`, {
+      fontFamily: 'Montserrat', fontSize: '14px', color: '#fbbf24', fontStyle: 'bold'
+    });
+    this.statsContainer.add(levelVal);
+    yOffset += 18;
+
+    // XP text
+    const xpLabel = this.scene.add.text(0, yOffset, 'Experience', textStyleName);
+    this.statsContainer.add(xpLabel);
+
+    const xpVal = this.scene.add.text(100, yOffset, `${experience} / ${xpNeeded}`, {
+      fontFamily: 'Montserrat', fontSize: '10px', color: '#a855f7', fontStyle: 'bold'
+    });
+    this.statsContainer.add(xpVal);
+    yOffset += 16;
+
+    // XP Progress Bar
+    const xpBarWidth = 170;
+    const xpBarHeight = 8;
+    const xpBarGraphics = this.scene.add.graphics();
+
+    // Bar background
+    xpBarGraphics.fillStyle(0x1e1b4b, 0.8);
+    xpBarGraphics.fillRoundedRect(0, yOffset, xpBarWidth, xpBarHeight, 3);
+
+    // Bar border
+    xpBarGraphics.lineStyle(1, 0x6d28d9, 0.6);
+    xpBarGraphics.strokeRoundedRect(0, yOffset, xpBarWidth, xpBarHeight, 3);
+
+    // Filled portion (purple gradient look)
+    if (xpPercent > 0) {
+      const fillWidth = Math.max(4, xpBarWidth * xpPercent);
+      xpBarGraphics.fillStyle(0x8b5cf6, 1);
+      xpBarGraphics.fillRoundedRect(0, yOffset, fillWidth, xpBarHeight, 3);
+
+      // Highlight shimmer on top
+      xpBarGraphics.fillStyle(0xc4b5fd, 0.4);
+      xpBarGraphics.fillRect(1, yOffset + 1, fillWidth - 2, 2);
+    }
+
+    this.statsContainer.add(xpBarGraphics);
+    yOffset += xpBarHeight + 12;
+
+    // Separator line
+    const separatorGraphics = this.scene.add.graphics();
+    separatorGraphics.lineStyle(1, 0x4f46e5, 0.3);
+    separatorGraphics.lineBetween(0, yOffset, 170, yOffset);
+    this.statsContainer.add(separatorGraphics);
+    yOffset += 8;
 
     // Header: Base Stats
     const baseHeader = this.scene.add.text(0, yOffset, 'BASE STATS', {

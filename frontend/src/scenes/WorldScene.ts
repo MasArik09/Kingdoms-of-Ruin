@@ -229,16 +229,80 @@ export class WorldScene extends Phaser.Scene {
     });
     new ExperienceSystem(this, this.player);
 
-    // Spawn Slime groups
-    const slimeSpawns = [
+    // Slime Respawn System — 12 spawn points, 6 active at a time, 20s respawn cycle
+    const slimeSpawnPoints = [
+      { x: 600, y: 600 },
       { x: 800, y: 780 },
       { x: 1200, y: 820 },
+      { x: 1400, y: 650 },
       { x: 720, y: 1100 },
       { x: 1280, y: 1140 },
+      { x: 400, y: 900 },
+      { x: 1600, y: 950 },
+      { x: 500, y: 1400 },
+      { x: 1500, y: 1350 },
+      { x: 900, y: 1500 },
+      { x: 1100, y: 500 },
     ];
-    slimeSpawns.forEach((spawn, idx) => {
-      const slime = new Slime(this, spawn.x, spawn.y, `slime_${idx}_${Date.now()}`, this.player);
-      this.enemies.add(slime);
+    const maxAliveSlimes = 6;
+    const respawnIntervalMs = 35000; // 35 seconds
+    let slimeIdCounter = 0;
+
+    const spawnSlimeWave = () => {
+      // Count alive slimes
+      const aliveSlimes = this.enemies.getChildren().filter(
+        (e) => (e as EnemyBase).active && !(e as EnemyBase).isDead
+      );
+      const slotsAvailable = maxAliveSlimes - aliveSlimes.length;
+      if (slotsAvailable <= 0) return;
+
+      // Shuffle spawn points and pick available ones (not too close to existing slimes)
+      const shuffled = Phaser.Utils.Array.Shuffle([...slimeSpawnPoints]);
+      let spawned = 0;
+
+      for (const point of shuffled) {
+        if (spawned >= slotsAvailable) break;
+
+        // Skip if a living slime is already near this point
+        const tooClose = aliveSlimes.some((e) => {
+          const enemy = e as EnemyBase;
+          return Phaser.Math.Distance.Between(enemy.x, enemy.y, point.x, point.y) < 120;
+        });
+        if (tooClose) continue;
+
+        // Skip if player is too close to the spawn point (avoid spawning on top of player)
+        const distToPlayer = Phaser.Math.Distance.Between(
+          this.player.x, this.player.y, point.x, point.y
+        );
+        if (distToPlayer < 200) continue;
+
+        const slime = new Slime(this, point.x, point.y, `slime_${slimeIdCounter++}`, this.player);
+        this.enemies.add(slime);
+
+        // Spawn-in visual: fade in + scale pop
+        slime.setAlpha(0);
+        slime.setScale(0.3);
+        this.tweens.add({
+          targets: slime,
+          alpha: 1,
+          scaleX: 0.9,
+          scaleY: 0.9,
+          duration: 400,
+          ease: 'Back.easeOut',
+        });
+
+        spawned++;
+      }
+    };
+
+    // Initial spawn
+    spawnSlimeWave();
+
+    // Recurring respawn timer
+    this.time.addEvent({
+      delay: respawnIntervalMs,
+      callback: spawnSlimeWave,
+      loop: true,
     });
 
     // Set collisions and overlaps for slimes

@@ -207,10 +207,23 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         throw new Error(`Failed to fetch progress: ${response.statusText}`);
       }
       const data = await response.json();
+
+      // Recalculate base stats from level to survive browser refresh.
+      // Growth per level matches ExperienceSystem.handleLevelUp:
+      //   health +2, stamina +2, strength +2, defense +1, agility +1
+      const levelsGained = (data.level || 1) - 1;
       set({
         level: data.level,
         experience: data.experience,
+        baseStats: {
+          health: 10 + levelsGained * 2,
+          stamina: 10 + levelsGained * 2,
+          strength: 10 + levelsGained * 2,
+          defense: 10 + levelsGained * 1,
+          agility: 10 + levelsGained * 1,
+        },
       });
+
       // Set current HP and stamina to max values calculated on startup
       const derived = get().getDerivedStats();
       set({

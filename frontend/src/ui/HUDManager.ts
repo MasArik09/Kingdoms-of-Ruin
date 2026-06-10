@@ -321,6 +321,7 @@ export class HUDManager {
     }
   }
 
+
   public resize(width: number, height: number) {
     const safePadding = 32;
     
