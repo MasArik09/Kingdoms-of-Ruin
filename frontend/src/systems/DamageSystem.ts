@@ -57,7 +57,7 @@ export class DamageSystem {
     const barWidth = 40;
     const barHeight = 5;
     const barX = player.x - barWidth / 2;
-    const barY = player.y - 28;
+    const barY = player.y - 42;
     this.playerHealthBar.setDepth(player.depth + 10);
 
     // Black border

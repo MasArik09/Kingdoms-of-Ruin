@@ -10,6 +10,7 @@ export class CombatSystem {
   private player: Phaser.Physics.Arcade.Sprite;
   private enemies: Phaser.Physics.Arcade.Group;
   private paperDoll: PaperDoll;
+  private isUIOpen: () => boolean;
 
   private spaceKey?: Phaser.Input.Keyboard.Key;
   private lastAttackTime = 0;
@@ -20,12 +21,14 @@ export class CombatSystem {
     scene: Phaser.Scene,
     player: Phaser.Physics.Arcade.Sprite,
     enemies: Phaser.Physics.Arcade.Group,
-    paperDoll: PaperDoll
+    paperDoll: PaperDoll,
+    isUIOpen: () => boolean
   ) {
     this.scene = scene;
     this.player = player;
     this.enemies = enemies;
     this.paperDoll = paperDoll;
+    this.isUIOpen = isUIOpen;
 
     // Bind keyboard inputs
     if (scene.input.keyboard) {
@@ -35,6 +38,7 @@ export class CombatSystem {
     // Bind mouse pointer down event
     scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!this.player.active) return;
+      if (this.isUIOpen()) return; // Don't attack when UI panels are open
       if (pointer.leftButtonDown()) {
         const time = this.scene.time.now;
         if (time - this.lastAttackTime >= this.attackCooldown) {
@@ -46,6 +50,7 @@ export class CombatSystem {
 
   public update(): void {
     if (!this.player.active) return;
+    if (this.isUIOpen()) return; // Don't process combat when UI panels are open
 
     const time = this.scene.time.now;
 

@@ -224,7 +224,9 @@ export class WorldScene extends Phaser.Scene {
 
     // Initialize Combat & Progression Systems
     this.enemies = this.physics.add.group({ runChildUpdate: true });
-    this.combatSystem = new CombatSystem(this, this.player, this.enemies, this.paperDoll);
+    this.combatSystem = new CombatSystem(this, this.player, this.enemies, this.paperDoll, () => {
+      return this.inventoryUI.getIsOpen() || this.characterPanelUI.getIsOpen();
+    });
     new ExperienceSystem(this, this.player);
 
     // Spawn Slime groups
