@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { useCharacterStore } from '../stores/characterStore';
+import { useWorldStateStore } from '../stores/worldStateStore';
 import { DamageSystem } from './DamageSystem';
 
 export class ExperienceSystem {
@@ -77,6 +78,12 @@ export class ExperienceSystem {
       const derived = charStore.getDerivedStats();
       charStore.setHp(derived.maxHealth);
       charStore.setStamina(derived.maxStamina);
+
+      // Save player position checkpoint to database
+      const px = Math.round(this.player.x);
+      const py = Math.round(this.player.y);
+      useWorldStateStore.getState().setWorldState('player_position_x', String(px));
+      useWorldStateStore.getState().setWorldState('player_position_y', String(py));
     });
 
     // 4. Play enhanced level-up visual feedback

@@ -190,11 +190,48 @@ export class WorldScene extends Phaser.Scene {
     });
 
     // 8. Spawn 2x Larger Player Character
-    const storePos = usePlayerStore.getState().playerPosition;
+    const { getWorldState } = useWorldStateStore.getState();
+    const savedX = getWorldState('player_position_x');
+    const savedY = getWorldState('player_position_y');
+    let startX = 1000;
+    let startY = 1000;
+    if (savedX && savedY) {
+      startX = parseInt(savedX, 10);
+      startY = parseInt(savedY, 10);
+      // Synchronize playerStore position so that update() begins with correct coordinates
+      usePlayerStore.getState().setPlayerPosition(startX, startY);
+    } else {
+      const storePos = usePlayerStore.getState().playerPosition;
+      startX = storePos.x;
+      startY = storePos.y;
+    }
+
     // Add shadow below the player
-    this.playerShadow = this.add.image(storePos.x, storePos.y + 24, 'shadow').setScale(1.5, 0.55).setAlpha(0.8);
-    this.player = this.physics.add.sprite(storePos.x, storePos.y, 'player');
+    this.playerShadow = this.add.image(startX, startY + 24, 'shadow').setScale(1.5, 0.55).setAlpha(0.8);
+    this.player = this.physics.add.sprite(startX, startY, 'player');
     this.player.setCollideWorldBounds(true);
+
+    let lastSavedX = startX;
+    let lastSavedY = startY;
+
+    // Periodically save player position checkpoint to database (every 2.5 seconds if position changed)
+    this.time.addEvent({
+      delay: 2500,
+      loop: true,
+      callback: () => {
+        if (!this.player || !this.player.active) return;
+        const px = Math.round(this.player.x);
+        const py = Math.round(this.player.y);
+        
+        // Only save if the position has changed from the last saved position
+        if (px !== lastSavedX || py !== lastSavedY) {
+          useWorldStateStore.getState().setWorldState('player_position_x', String(px));
+          useWorldStateStore.getState().setWorldState('player_position_y', String(py));
+          lastSavedX = px;
+          lastSavedY = py;
+        }
+      }
+    });
     
     // Setup player equipment sprites
     this.paperDoll = new PaperDoll(this, this.player);
@@ -229,7 +266,7 @@ export class WorldScene extends Phaser.Scene {
     });
     new ExperienceSystem(this, this.player);
 
-    // Slime Respawn System — 12 spawn points, 6 active at a time, 20s respawn cycle
+    // Slime Respawn System — 12 spawn points, 6 active at a time, 35s respawn cycle
     const slimeSpawnPoints = [
       { x: 600, y: 600 },
       { x: 800, y: 780 },
@@ -337,7 +374,23 @@ export class WorldScene extends Phaser.Scene {
 
     // Hook up Landmark Events
     this.events.on('landmark:campfire-rest', () => {
-      this.toastManager.showToast('Campfire Rested: You rest beside the fire.');
+      const derived = useCharacterStore.getState().getDerivedStats();
+      useCharacterStore.getState().setHp(derived.maxHealth);
+      useCharacterStore.getState().setStamina(derived.maxStamina);
+
+      const px = Math.round(this.player.x);
+      const py = Math.round(this.player.y);
+      lastSavedX = px;
+      lastSavedY = py;
+      Promise.all([
+        useWorldStateStore.getState().setWorldState('player_position_x', String(px)),
+        useWorldStateStore.getState().setWorldState('player_position_y', String(py))
+      ]).then(() => {
+        this.toastManager.showToast('Campfire Rested: Health/Stamina restored & checkpoint saved.');
+      }).catch((err) => {
+        console.error('Failed to save player position checkpoint:', err);
+        this.toastManager.showToast('Campfire Rested: Health/Stamina restored.', false);
+      });
     });
 
     this.events.on('landmark:shrine-examine', () => {
@@ -348,6 +401,13 @@ export class WorldScene extends Phaser.Scene {
       useInventoryStore.getState().addItem(data.itemId, data.quantity).then((res) => {
         if (res) {
           this.toastManager.showToast(`Obtained: Wood x${data.quantity}`);
+          // Save checkpoint position on looting chest
+          const px = Math.round(this.player.x);
+          const py = Math.round(this.player.y);
+          lastSavedX = px;
+          lastSavedY = py;
+          useWorldStateStore.getState().setWorldState('player_position_x', String(px));
+          useWorldStateStore.getState().setWorldState('player_position_y', String(py));
         } else {
           this.toastManager.showToast('Failed to save loot to server', false);
         }

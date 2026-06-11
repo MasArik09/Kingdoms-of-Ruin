@@ -9,7 +9,7 @@ interface PlayerState {
 
 export const usePlayerStore = create<PlayerState>((set) => ({
   playerName: 'Hero',
-  playerPosition: { x: 400, y: 300 }, // Default position in the center of the world
+  playerPosition: { x: 1000, y: 1000 }, // Default position in the center of the world
   setPlayerPosition: (x: number, y: number) =>
     set({ playerPosition: { x, y } }),
   setPlayerName: (name: string) => set({ playerName: name }),
